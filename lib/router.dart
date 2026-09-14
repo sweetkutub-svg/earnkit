@@ -28,6 +28,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/privacy',
         builder: (context, state) => const PrivacyPolicyScreen()),
+
     GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
     GoRoute(
         path: '/wallet', builder: (context, state) => const WalletScreen()),
