@@ -3,6 +3,9 @@ import 'screens/splash_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
+import 'screens/verify_email_screen.dart';
+import 'screens/terms_screen.dart';
+import 'screens/privacy_policy_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/withdraw_screen.dart';
@@ -18,6 +21,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
         path: '/signup', builder: (context, state) => const SignupScreen()),
+    GoRoute(
+        path: '/verify-email',
+        builder: (context, state) => const VerifyEmailScreen()),
+    GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
+    GoRoute(
+        path: '/privacy',
+        builder: (context, state) => const PrivacyPolicyScreen()),
     GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
     GoRoute(
         path: '/wallet', builder: (context, state) => const WalletScreen()),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
+import '../services/auth_service.dart';
+import '../theme/app_colors.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -13,8 +16,11 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _referralController = TextEditingController();
+  final _authService = AuthService();
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
+  bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
@@ -23,6 +29,71 @@ class _SignupScreenState extends State<SignupScreen> {
     _passwordController.dispose();
     _referralController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleGoogleSignUp() async {
+    setState(() => _isGoogleLoading = true);
+    final error = await _authService.signInWithGoogle();
+    if (!mounted) return;
+    setState(() => _isGoogleLoading = false);
+
+    if (error == null) {
+      context.go('/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+    }
+  }
+
+  Future<void> _handleSignup() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final referral = _referralController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password')),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Password must be at least 6 characters')),
+      );
+      return;
+    }
+
+    if (!_agreedToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Please agree to the Terms & Privacy Policy')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final error = await _authService.signUp(
+      name: name,
+      email: email,
+      password: password,
+      referralCode: referral.isEmpty ? null : referral,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (error == null) {
+      context.go('/verify-email');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+    }
   }
 
   @override
@@ -54,8 +125,11 @@ class _SignupScreenState extends State<SignupScreen> {
             const SizedBox(height: 8),
             const Text('Start earning with Earnkit'),
             const SizedBox(height: 28),
+
+            // 1. Full Name
             TextField(
               controller: _nameController,
+              keyboardType: TextInputType.name,
               decoration: const InputDecoration(
                 labelText: 'Full Name',
                 prefixIcon: Icon(Icons.person_outline),
@@ -63,6 +137,8 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // 2. Email
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -73,6 +149,8 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // 3. Password
             TextField(
               controller: _passwordController,
               obscureText: _obscurePassword,
@@ -93,6 +171,8 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // 4. Referral Code
             TextField(
               controller: _referralController,
               decoration: const InputDecoration(
@@ -101,7 +181,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
+
             Row(
               children: [
                 Checkbox(
@@ -112,23 +193,91 @@ class _SignupScreenState extends State<SignupScreen> {
                     });
                   },
                 ),
-                const Expanded(
-                  child: Text('I agree to the Terms & Privacy Policy'),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                          color: Colors.black87, fontSize: 14),
+                      children: [
+                        const TextSpan(text: 'I agree to the '),
+                        TextSpan(
+                          text: 'Terms',
+                          style: TextStyle(
+                              color: AppColors.emerald,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => context.push('/terms'),
+                        ),
+                        const TextSpan(text: ' & '),
+                        TextSpan(
+                          text: 'Privacy Policy',
+                          style: TextStyle(
+                              color: AppColors.emerald,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => context.push('/privacy'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
+
+            // 5. Create Account button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              onPressed: () {
-                // TODO: Phase 3 - real Firebase Auth signup
-                context.go('/home');
-              },
-              child: const Text('Create Account (temp -> Home)'),
+              onPressed: _isLoading ? null : _handleSignup,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Create Account'),
+            ),
+            const SizedBox(height: 20),
+
+            // 6. Divider + Sign up with Google (moved down)
+            Row(
+              children: const [
+                Expanded(child: Divider()),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text('OR'),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: _isGoogleLoading ? null : _handleGoogleSignUp,
+              icon: _isGoogleLoading
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Image.asset(
+                      'assets/images/google_logo.png',
+                      height: 20,
+                      width: 20,
+                    ),
+              label: const Text('Sign up with Google'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
             ),
             const SizedBox(height: 16),
+
             Center(
               child: TextButton(
                 onPressed: () {
