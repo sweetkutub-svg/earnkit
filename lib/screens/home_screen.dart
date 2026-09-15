@@ -2,26 +2,72 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../services/ad_service.dart';
 import '../models/user_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _authService = AuthService();
+  final _firestoreService = FirestoreService();
+  final _adService = AdService();
+  bool _isAdLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAd();
+  }
+
+  void _loadAd() {
+    setState(() => _isAdLoading = true);
+    _adService.loadRewardedAd(
+      onLoaded: () {
+        if (mounted) setState(() => _isAdLoading = false);
+      },
+      onFailed: (error) {
+        if (mounted) setState(() => _isAdLoading = false);
+        // ignore: avoid_print
+        print('Ad failed to load: $error');
+      },
+    );
+  }
+
+  void _watchAd() {
+    if (!_adService.isAdReady) return;
+    _adService.showRewardedAd(
+      onEarnedReward: () {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Ad watched! (Test mode — wallet crediting comes in Phase 7)')),
+        );
+      },
+      onAdClosed: () {
+        _loadAd(); // preload next ad
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final authService = AuthService();
-    final firestoreService = FirestoreService();
-    final uid = authService.currentUser?.uid;
+    final uid = _authService.currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Home')),
       body: uid == null
           ? const Center(child: Text('Not logged in'))
           : StreamBuilder<AppUser?>(
-              stream: firestoreService.streamUserData(uid),
+              stream: _firestoreService.streamUserData(uid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -34,7 +80,6 @@ class HomeScreen extends StatelessWidget {
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    // StreamBuilder auto-updates; this just gives pull-to-refresh feedback
                     await Future.delayed(const Duration(milliseconds: 500));
                   },
                   child: ListView(
@@ -46,7 +91,8 @@ class HomeScreen extends StatelessWidget {
                         padding: const EdgeInsets.all(AppSpacing.xl),
                         decoration: BoxDecoration(
                           gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(AppSpacing.radius),
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.radius),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,79 +152,78 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: AppSpacing.lg),
 
                       // Watch Ad & Earn card
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius:
-                              BorderRadius.circular(AppSpacing.radius),
-                          border: Border.all(color: AppColors.gray200),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.lightEmerald,
-                                    borderRadius: BorderRadius.circular(12),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(AppSpacing.radius),
+                        onTap: _isAdLoading || !_adService.isAdReady
+                            ? null
+                            : _watchAd,
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radius),
+                            border: Border.all(color: AppColors.gray200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.lightEmerald,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                        Icons.play_circle_outline,
+                                        color: AppColors.emerald),
                                   ),
-                                  child: const Icon(
-                                      Icons.play_circle_outline,
-                                      color: AppColors.emerald),
-                                ),
-                                const SizedBox(width: AppSpacing.md),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Watch Ad & Earn',
-                                          style: AppTextStyles.h3CardTitle),
-                                      Text('New video ready',
-                                          style: AppTextStyles.caption),
-                                    ],
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Watch Ad & Earn',
+                                            style: AppTextStyles.h3CardTitle),
+                                        Text(
+                                          _isAdLoading
+                                              ? 'Loading ad...'
+                                              : _adService.isAdReady
+                                                  ? 'Test ad ready'
+                                                  : 'Ad not available',
+                                          style: AppTextStyles.caption,
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.amberLight,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: const Text('+5',
-                                      style: TextStyle(
-                                          color: AppColors.gold,
-                                          fontWeight: FontWeight.bold)),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Daily Ads Limit',
-                                    style: AppTextStyles.caption),
-                                Text('0 / 20 Watched',
-                                    style: AppTextStyles.caption),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: 0,
-                                minHeight: 6,
-                                backgroundColor: AppColors.gray200,
-                                valueColor: const AlwaysStoppedAnimation(
-                                    AppColors.emerald),
+                                  if (_isAdLoading)
+                                    const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  else
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.amberLight,
+                                        borderRadius:
+                                            BorderRadius.circular(20),
+                                      ),
+                                      child: const Text('TEST',
+                                          style: TextStyle(
+                                              color: AppColors.gold,
+                                              fontWeight: FontWeight.bold)),
+                                    ),
+                                ],
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
@@ -187,7 +232,8 @@ class HomeScreen extends StatelessWidget {
                           style: AppTextStyles.h2SectionHeader),
                       const SizedBox(height: AppSpacing.sm),
                       const Padding(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                        padding:
+                            EdgeInsets.symmetric(vertical: AppSpacing.lg),
                         child: Text(
                           'Offerwall tasks will appear here once integrated (Phase 12).',
                           style: AppTextStyles.bodyText,

@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
+import '../theme/app_spacing.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({super.key});
@@ -10,7 +13,8 @@ class VerifyEmailScreen extends StatefulWidget {
   State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
 }
 
-class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
+class _VerifyEmailScreenState extends State<VerifyEmailScreen>
+    with WidgetsBindingObserver {
   final _authService = AuthService();
   Timer? _timer;
   bool _isChecking = false;
@@ -19,14 +23,25 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-check every 4 seconds if the user has verified their email
+    WidgetsBinding.instance.addObserver(this);
     _timer = Timer.periodic(const Duration(seconds: 4), (_) => _checkVerified());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When user comes back to the app (e.g. after clicking the email link
+    // in their browser/email app), immediately check verification status
+    // instead of waiting for the next 4-second timer tick.
+    if (state == AppLifecycleState.resumed) {
+      _checkVerified();
+    }
   }
 
   Future<void> _checkVerified() async {
@@ -48,9 +63,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     setState(() => _isResending = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(error == null
-            ? 'Verification email sent again!'
-            : error),
+        content:
+            Text(error == null ? 'Verification email sent again!' : error),
+        backgroundColor: error == null ? AppColors.emerald : AppColors.errorRed,
       ),
     );
   }
@@ -60,46 +75,109 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     final email = _authService.currentUser?.email ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify Your Email')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.mark_email_unread_outlined, size: 80),
-            const SizedBox(height: 24),
-            const Text(
-              'Check your inbox',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'We sent a verification link to\n$email\n\nVerify your email to continue.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            if (_isChecking) const CircularProgressIndicator(),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isResending ? null : _resendEmail,
-              child: _isResending
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Resend Email'),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () async {
-                await _authService.signOut();
-                if (context.mounted) context.go('/login');
-              },
-              child: const Text('Back to Login'),
-            ),
-          ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mark_email_unread_outlined,
+                  size: 56,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              Text(
+                'Check your inbox',
+                style: AppTextStyles.h1ScreenTitle,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'We sent a verification link to',
+                style: AppTextStyles.bodyText,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                email,
+                style: AppTextStyles.h3CardTitle
+                    .copyWith(color: AppColors.emerald),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.lightEmerald,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isChecking)
+                      const SizedBox(
+                        height: 14,
+                        width: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.emerald,
+                        ),
+                      )
+                    else
+                      const Icon(Icons.autorenew,
+                          size: 14, color: AppColors.emerald),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Waiting for verification...',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.emerald),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isResending ? null : _resendEmail,
+                  child: _isResending
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Resend Email'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextButton(
+                onPressed: _isChecking ? null : _checkVerified,
+                child: const Text("I've verified — Check Now"),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextButton(
+                onPressed: () async {
+                  await _authService.signOut();
+                  if (context.mounted) context.go('/login');
+                },
+                child: Text(
+                  'Back to Login',
+                  style: TextStyle(color: AppColors.gray600),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

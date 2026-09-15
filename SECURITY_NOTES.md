@@ -25,7 +25,7 @@
 - Phase 7: real crediting logic goes here, server-side only
 
 ## 5. API Keys / Secrets (fill in as each phase adds them — NEVER commit actual values to GitHub)
-- AdMob App ID: _(not yet set — Phase 6)_
+- AdMob App ID: ca-app-pub-3489289706205442~4770578509
 - AdMob Rewarded Ad Unit ID (test): _(not yet set — Phase 6)_
 - AdMob Rewarded Ad Unit ID (production): _(not yet set — Phase 20, only at release)_
 - Offerwall (Ayet Studios / AdGate) publisher key: _(not yet set — Phase 12)_
@@ -37,6 +37,10 @@
 - [ ] `GoogleService-Info.plist` NOT committed (iOS Firebase config — sensitive)
 - [ ] `.env` files NOT committed
 - [ ] `firebase_options.dart` — ⚠️ contains API keys too, technically safe for client apps (public by design) but double-check before public repo push
+
+## 6.5. Email Deliverability (fix before Phase 19 beta / real users)
+- Firebase default verification/reset emails (from `noreply@earnkit-app.firebaseapp.com`) currently land in Spam for new recipients — expected for a fresh Firebase project domain.
+- TODO before real users: set up custom SMTP (SendGrid/Brevo free tier) with a custom domain (e.g. `earnkit.in`) under Firebase Console → Authentication → Templates → SMTP settings, so emails come from a trusted domain.
 
 ## 7. Admin Panel (Phase 17 — future)
 - Separate Firebase Auth user pool (allow-listed emails, no public signup)

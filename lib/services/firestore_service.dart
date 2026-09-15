@@ -66,6 +66,18 @@ class FirestoreService {
     }
   }
 
+  // ---------- PHASE 6: AD EVENT LOGGING (test-mode only, no wallet credit) ----------
+
+  Future<void> logAdWatchedEventOnly(String uid) async {
+    await _db.collection('transactions').add({
+      'uid': uid,
+      'type': 'ad_watched',
+      'amount': 0, // 0 = not credited yet; Phase 7 SSV will credit via Cloud Function
+      'source': 'TEST_AD_EVENT_LOG_ONLY_PHASE6',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
   // ---------- TRANSACTIONS ----------
 
   Stream<List<AppTransaction>> streamTransactions(String uid) {
