@@ -1,18 +1,23 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
 
 class AdService {
-  // Google's OFFICIAL public test ad unit ID for Rewarded ads (Android).
-  // NEVER replace this with a real ad unit ID until Phase 20.
   static const String _testRewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
 
+  // Phase 7 backend endpoint (Vercel)
+  static const String _verifyAdEndpoint =
+      'https://earnkit-backend.vercel.app/api/verify-ad';
+
   RewardedAd? _rewardedAd;
   final _authService = AuthService();
-  final _firestoreService = FirestoreService();
 
-  void loadRewardedAd({required Function() onLoaded, required Function(String) onFailed}) {
+  void loadRewardedAd({
+    required Function() onLoaded,
+    required Function(String) onFailed,
+  }) {
     RewardedAd.load(
       adUnitId: _testRewardedAdUnitId,
       request: const AdRequest(),
@@ -32,7 +37,8 @@ class AdService {
   bool get isAdReady => _rewardedAd != null;
 
   void showRewardedAd({
-    required Function() onEarnedReward,
+    required Function(int pointsCredited) onEarnedReward,
+    required Function(String error) onCreditFailed,
     required Function() onAdClosed,
   }) {
     if (_rewardedAd == null) return;
@@ -52,20 +58,42 @@ class AdService {
 
     _rewardedAd!.show(
       onUserEarnedReward: (ad, reward) async {
-        // Phase 6 rule (per 03_SECURITY.md): DO NOT credit wallet here.
-        // Only log the "ad watched" event. Real crediting happens in
-        // Phase 7 via server-side AdMob SSV + Cloud Function.
-        await _logAdWatchedEvent();
-        onEarnedReward();
+        await _callVerifyEndpoint(
+          onSuccess: onEarnedReward,
+          onFailed: onCreditFailed,
+        );
       },
     );
   }
 
-  Future<void> _logAdWatchedEvent() async {
+  Future<void> _callVerifyEndpoint({
+    required Function(int pointsCredited) onSuccess,
+    required Function(String error) onFailed,
+  }) async {
     final uid = _authService.currentUser?.uid;
-    if (uid == null) return;
-    // Log-only — no wallet credit. Uses the transactions collection
-    // with a special 'source' tag so Phase 7 can identify+reconcile these.
-    await _firestoreService.logAdWatchedEventOnly(uid);
+    if (uid == null) {
+      onFailed('Not logged in');
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(_verifyAdEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'uid': uid}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        onSuccess(data['pointsCredited'] as int);
+      } else if (response.statusCode == 429) {
+        onFailed('Daily ad limit reached (${data['limit']} ads/day)');
+      } else {
+        onFailed(data['error'] ?? 'Failed to credit reward');
+      }
+    } catch (e) {
+      onFailed('Network error — could not verify ad');
+    }
   }
 }

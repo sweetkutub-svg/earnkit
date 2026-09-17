@@ -44,12 +44,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void _watchAd() {
     if (!_adService.isAdReady) return;
     _adService.showRewardedAd(
-      onEarnedReward: () {
+      onEarnedReward: (pointsCredited) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Ad watched! (Test mode — wallet crediting comes in Phase 7)')),
+          SnackBar(content: Text('+$pointsCredited points credited!')),
+        );
+      },
+      onCreditFailed: (error) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error)),
         );
       },
       onAdClosed: () {
