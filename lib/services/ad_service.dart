@@ -88,7 +88,14 @@ class AdService {
       if (response.statusCode == 200 && data['success'] == true) {
         onSuccess(data['pointsCredited'] as int);
       } else if (response.statusCode == 429) {
-        onFailed('Daily ad limit reached (${data['limit']} ads/day)');
+        if (data.containsKey('retryAfterSeconds')) {
+          onFailed(
+              'Please wait ${data['retryAfterSeconds']}s before watching another ad');
+        } else if (data.containsKey('limit')) {
+          onFailed('Daily ad limit reached (${data['limit']} ads/day)');
+        } else {
+          onFailed(data['error'] ?? 'Too many requests, please try again');
+        }
       } else {
         onFailed(data['error'] ?? 'Failed to credit reward');
       }
