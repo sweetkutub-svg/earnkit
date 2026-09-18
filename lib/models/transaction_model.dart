@@ -1,6 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum TransactionType { adWatched, taskCompleted, referralBonus, withdrawal }
+enum TransactionType {
+  adWatched,
+  taskCompleted,
+  referralBonus,
+  withdrawal,
+  bonusUnlocked,
+}
 
 class AppTransaction {
   final String id;
@@ -40,6 +46,8 @@ class AppTransaction {
         return TransactionType.referralBonus;
       case 'withdrawal':
         return TransactionType.withdrawal;
+      case 'bonus_unlocked':
+        return TransactionType.bonusUnlocked;
       default:
         return TransactionType.adWatched;
     }

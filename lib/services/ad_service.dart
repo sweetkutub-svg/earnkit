@@ -37,7 +37,8 @@ class AdService {
   bool get isAdReady => _rewardedAd != null;
 
   void showRewardedAd({
-    required Function(int pointsCredited) onEarnedReward,
+    required Function(int pointsCredited, bool bonusUnlocked, int bonusAmount)
+        onEarnedReward,
     required Function(String error) onCreditFailed,
     required Function() onAdClosed,
   }) {
@@ -67,7 +68,8 @@ class AdService {
   }
 
   Future<void> _callVerifyEndpoint({
-    required Function(int pointsCredited) onSuccess,
+    required Function(int pointsCredited, bool bonusUnlocked, int bonusAmount)
+        onSuccess,
     required Function(String error) onFailed,
   }) async {
     final uid = _authService.currentUser?.uid;
@@ -86,7 +88,11 @@ class AdService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        onSuccess(data['pointsCredited'] as int);
+        onSuccess(
+          data['pointsCredited'] as int,
+          data['bonusUnlocked'] == true,
+          (data['bonusAmount'] ?? 0) as int,
+        );
       } else if (response.statusCode == 429) {
         if (data.containsKey('retryAfterSeconds')) {
           onFailed(

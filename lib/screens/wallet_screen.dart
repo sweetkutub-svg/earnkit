@@ -22,6 +22,8 @@ class WalletScreen extends StatelessWidget {
         return Icons.people_outline;
       case TransactionType.withdrawal:
         return Icons.arrow_upward;
+      case TransactionType.bonusUnlocked:
+        return Icons.star_outline;
     }
   }
 
@@ -35,6 +37,8 @@ class WalletScreen extends StatelessWidget {
         return 'Referral Bonus';
       case TransactionType.withdrawal:
         return 'Withdrawal Sent';
+      case TransactionType.bonusUnlocked:
+        return 'Bonus Unlocked!';
     }
   }
 
@@ -94,7 +98,7 @@ class WalletScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            padding: const EdgeInsets.all(AppSpacing.md),
                             decoration: BoxDecoration(
                               color: AppColors.white,
                               borderRadius:
@@ -107,7 +111,7 @@ class WalletScreen extends StatelessWidget {
                                 Row(
                                   children: [
                                     const Icon(Icons.lock_outline,
-                                        size: 14,
+                                        size: 13,
                                         color: AppColors.gray600),
                                     const SizedBox(width: 4),
                                     Text('Locked',
@@ -121,10 +125,42 @@ class WalletScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.md),
+                        const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Container(
-                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            decoration: BoxDecoration(
+                              color: AppColors.amberLight,
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.radius),
+                              border: Border.all(
+                                  color: AppColors.gold.withValues(alpha: 0.4)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.card_giftcard,
+                                        size: 13, color: AppColors.gold),
+                                    const SizedBox(width: 4),
+                                    Text('Bonus Ready',
+                                        style: AppTextStyles.caption
+                                            .copyWith(color: AppColors.gold)),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text('₹${user.unlockedBonus}',
+                                    style: AppTextStyles.h3CardTitle
+                                        .copyWith(color: AppColors.gold)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(AppSpacing.md),
                             decoration: BoxDecoration(
                               color: AppColors.white,
                               borderRadius:
@@ -137,7 +173,7 @@ class WalletScreen extends StatelessWidget {
                                 Row(
                                   children: [
                                     const Icon(Icons.trending_up,
-                                        size: 14,
+                                        size: 13,
                                         color: AppColors.gray600),
                                     const SizedBox(width: 4),
                                     Text('Lifetime',
@@ -155,6 +191,23 @@ class WalletScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (user.unlockedBonus > 0) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.lightEmerald,
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.radius),
+                        ),
+                        child: Text(
+                          '₹${user.unlockedBonus} bonus unlocked — it will be added to your withdrawal total once you\'re eligible to withdraw.',
+                          style: AppTextStyles.caption
+                              .copyWith(color: AppColors.emerald),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.lg),
 
                     SizedBox(

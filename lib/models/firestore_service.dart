@@ -22,50 +22,6 @@ class FirestoreService {
     });
   }
 
-  // NOTE (see SECURITY_NOTES.md): this direct client-side wallet update is a
-  // temporary Phase 4 scaffold for manual testing only. From Phase 7 onward,
-  // wallet credits MUST go through a server-verified Cloud Function — this
-  // method will be removed/blocked by Firestore rules at that point.
-  Future<void> updateWallet({
-    required String uid,
-    required int amountDelta,
-    required TransactionType type,
-    required String source,
-  }) async {
-    final userRef = _db.collection('users').doc(uid);
-    final txRef = _db.collection('transactions').doc();
-
-    await _db.runTransaction((transaction) async {
-      final userSnap = await transaction.get(userRef);
-      final currentBalance = (userSnap.data()?['walletBalance'] ?? 0) as int;
-
-      transaction.update(userRef, {
-        'walletBalance': currentBalance + amountDelta,
-      });
-
-      transaction.set(txRef, {
-        'uid': uid,
-        'type': _typeToString(type),
-        'amount': amountDelta,
-        'source': source,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    });
-  }
-
-  String _typeToString(TransactionType type) {
-    switch (type) {
-      case TransactionType.adWatched:
-        return 'ad_watched';
-      case TransactionType.taskCompleted:
-        return 'task_completed';
-      case TransactionType.referralBonus:
-        return 'referral_bonus';
-      case TransactionType.withdrawal:
-        return 'withdrawal';
-    }
-  }
-
   // ---------- TRANSACTIONS ----------
 
   Stream<List<AppTransaction>> streamTransactions(String uid) {

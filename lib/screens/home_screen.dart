@@ -6,6 +6,7 @@ import '../services/ad_service.dart';
 import '../models/user_model.dart';
 import '../models/transaction_model.dart';
 import '../widgets/app_dialog.dart';
+import '../widgets/bonus_unlocked_dialog.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
@@ -47,10 +48,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void _watchAd() {
     if (!_adService.isAdReady) return;
     _adService.showRewardedAd(
-      onEarnedReward: (pointsCredited) {
+      onEarnedReward: (pointsCredited, bonusUnlocked, bonusAmount) {
         if (!mounted) return;
-        AppDialog.showSuccess(
-            context, 'You earned +$pointsCredited Earnkit Points!');
+        if (bonusUnlocked) {
+          BonusUnlockedDialog.show(context, bonusAmount);
+        } else {
+          AppDialog.showSuccess(
+              context, 'You earned +$pointsCredited Earnkit Points!');
+        }
       },
       onCreditFailed: (error) {
         if (!mounted) return;
