@@ -330,15 +330,43 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      Text('Earn More Tasks',
-                          style: AppTextStyles.h2SectionHeader),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Earn More Tasks',
+                              style: AppTextStyles.h2SectionHeader),
+                          TextButton(
+                            onPressed: () => context.push('/earn-more'),
+                            child: const Text('View All'),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: AppSpacing.sm),
-                      const Padding(
-                        padding:
-                            EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                        child: Text(
-                          'Offerwall tasks will appear here once integrated (Phase 12).',
-                          style: AppTextStyles.bodyText,
+                      InkWell(
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radius),
+                        onTap: () => context.push('/earn-more'),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radius),
+                            border: Border.all(color: AppColors.gray200),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.assignment_outlined,
+                                  color: AppColors.gray400, size: 32),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                'No tasks available yet — check back soon!',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.bodyText,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],

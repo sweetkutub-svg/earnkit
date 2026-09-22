@@ -8,6 +8,7 @@ import 'screens/terms_screen.dart';
 import 'screens/privacy_policy_screen.dart';
 import 'screens/referral_screen.dart';
 import 'screens/post_signup_referral_screen.dart';
+import 'screens/earn_more_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/withdraw_screen.dart';
@@ -36,6 +37,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/post-signup',
         builder: (context, state) => const PostSignupReferralScreen()),
+    GoRoute(
+        path: '/earn-more',
+        builder: (context, state) => const EarnMoreScreen()),
 
     GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
     GoRoute(
