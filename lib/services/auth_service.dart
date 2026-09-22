@@ -1,6 +1,13 @@
+import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
+class GoogleSignInResult {
+  final String? error;
+  final bool isNewUser;
+  GoogleSignInResult({this.error, this.isNewUser = false});
+}
 
 class AuthService {
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
@@ -12,12 +19,69 @@ class AuthService {
 
   Stream<fb_auth.User?> get authStateChanges => _auth.authStateChanges();
 
-  // Sign up with email & password + create Firestore user doc + send verification email
+  Future<String> _generateReferralCode(String uid) async {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final rand = Random.secure();
+
+    for (int attempt = 0; attempt < 5; attempt++) {
+      final code = List.generate(
+          6, (_) => chars[rand.nextInt(chars.length)]).join();
+      final codeRef = _firestore.collection('referral_codes').doc(code);
+      final codeSnap = await codeRef.get();
+      if (!codeSnap.exists) {
+        await codeRef.set({'uid': uid});
+        return code;
+      }
+    }
+    return '${uid.substring(0, 6).toUpperCase()}${rand.nextInt(99)}';
+  }
+
+  // Called from the post-signup screen, not during signup itself.
+  Future<String?> linkReferralCode(String rawCode) async {
+    final uid = currentUser?.uid;
+    if (uid == null) return 'Not logged in';
+
+    final code = rawCode.trim().toUpperCase();
+    if (code.isEmpty) return null; // nothing to link, not an error
+
+    try {
+      final userRef = _firestore.collection('users').doc(uid);
+      final userSnap = await userRef.get();
+      final alreadyUsed = userSnap.data()?['referralCodeUsed'] ?? '';
+      if (alreadyUsed.toString().isNotEmpty) {
+        return 'A referral code has already been applied to your account';
+      }
+
+      final codeSnap =
+          await _firestore.collection('referral_codes').doc(code).get();
+      if (!codeSnap.exists) {
+        return 'Invalid referral code';
+      }
+      final referrerUid = codeSnap.data()?['uid'];
+      if (referrerUid == null || referrerUid == uid) {
+        return 'You cannot use your own referral code';
+      }
+
+      await _firestore.collection('referrals').add({
+        'referrerUid': referrerUid,
+        'referredUid': uid,
+        'referralCode': code,
+        'completed': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      await userRef.update({'referralCodeUsed': code});
+
+      return null;
+    } catch (e) {
+      return 'Could not apply referral code. Please try again.';
+    }
+  }
+
   Future<String?> signUp({
     required String name,
     required String email,
     required String password,
-    String? referralCode,
   }) async {
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
@@ -26,8 +90,9 @@ class AuthService {
       );
 
       final uid = credential.user!.uid;
-
       await credential.user!.updateDisplayName(name);
+
+      final myReferralCode = await _generateReferralCode(uid);
 
       await _firestore.collection('users').doc(uid).set({
         'uid': uid,
@@ -37,15 +102,15 @@ class AuthService {
         'walletBalance': 0,
         'lockedBonus': 10,
         'unlockedBonus': 0,
-        'referralCodeUsed': referralCode ?? '',
+        'referralCode': myReferralCode,
+        'referralCodeUsed': '',
         'signInMethod': 'email',
         'emailVerified': false,
       });
 
-      // Send verification email (required for email/password signups)
       await credential.user!.sendEmailVerification();
 
-      return null; // null means success
+      return null;
     } on fb_auth.FirebaseAuthException catch (e) {
       return e.message ?? 'Signup failed. Please try again.';
     } catch (e) {
@@ -53,17 +118,13 @@ class AuthService {
     }
   }
 
-  // Login with email & password
   Future<String?> login({
     required String email,
     required String password,
   }) async {
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      return null; // null means success
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return null;
     } on fb_auth.FirebaseAuthException catch (e) {
       return e.message ?? 'Login failed. Please try again.';
     } catch (e) {
@@ -71,8 +132,7 @@ class AuthService {
     }
   }
 
-  // Sign in with Google — no email verification needed, Google already verifies it
-  Future<String?> signInWithGoogle() async {
+  Future<GoogleSignInResult> signInWithGoogle() async {
     try {
       if (!_googleInitialized) {
         await _googleSignIn.initialize();
@@ -80,7 +140,6 @@ class AuthService {
       }
 
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-
       final idToken = googleUser.authentication.idToken;
 
       final authClient = googleUser.authorizationClient;
@@ -96,9 +155,13 @@ class AuthService {
       final userCred = await _auth.signInWithCredential(credential);
       final uid = userCred.user!.uid;
 
-      // Create Firestore doc only if it's a first-time Google sign-in
       final docSnap = await _firestore.collection('users').doc(uid).get();
+      bool isNewUser = false;
+
       if (!docSnap.exists) {
+        isNewUser = true;
+        final myReferralCode = await _generateReferralCode(uid);
+
         await _firestore.collection('users').doc(uid).set({
           'uid': uid,
           'name': userCred.user!.displayName ?? '',
@@ -107,21 +170,19 @@ class AuthService {
           'walletBalance': 0,
           'lockedBonus': 10,
           'unlockedBonus': 0,
+          'referralCode': myReferralCode,
           'referralCodeUsed': '',
           'signInMethod': 'google',
           'emailVerified': true,
         });
       }
 
-      return null; // null means success
+      return GoogleSignInResult(isNewUser: isNewUser);
     } catch (e) {
-      // ignore: avoid_print
-      print('GOOGLE SIGN-IN ERROR: $e');
-      return 'Google sign-in failed: $e';
+      return GoogleSignInResult(error: 'Google sign-in failed: $e');
     }
   }
 
-  // Forgot password
   Future<String?> resetPassword(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
@@ -131,7 +192,6 @@ class AuthService {
     }
   }
 
-  // Resend verification email
   Future<String?> resendVerificationEmail() async {
     try {
       await _auth.currentUser?.sendEmailVerification();
@@ -141,7 +201,6 @@ class AuthService {
     }
   }
 
-  // Reload user and check if email is now verified
   Future<bool> checkEmailVerified() async {
     await _auth.currentUser?.reload();
     return _auth.currentUser?.emailVerified ?? false;
@@ -149,10 +208,8 @@ class AuthService {
 
   bool get isEmailVerified {
     final user = _auth.currentUser;
-    // Google sign-in users are always considered verified
-    final isGoogleUser = user?.providerData
-            .any((p) => p.providerId == 'google.com') ??
-        false;
+    final isGoogleUser =
+        user?.providerData.any((p) => p.providerId == 'google.com') ?? false;
     return isGoogleUser || (user?.emailVerified ?? false);
   }
 

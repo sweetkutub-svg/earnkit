@@ -5,6 +5,7 @@ class AppUser {
   final int walletBalance;
   final int lockedBonus;
   final int unlockedBonus;
+  final String referralCode;
   final String referralCodeUsed;
   final String signInMethod;
   final bool emailVerified;
@@ -16,6 +17,7 @@ class AppUser {
     required this.walletBalance,
     required this.lockedBonus,
     required this.unlockedBonus,
+    required this.referralCode,
     required this.referralCodeUsed,
     required this.signInMethod,
     required this.emailVerified,
@@ -29,6 +31,7 @@ class AppUser {
       walletBalance: (map['walletBalance'] ?? 0) as int,
       lockedBonus: (map['lockedBonus'] ?? 0) as int,
       unlockedBonus: (map['unlockedBonus'] ?? 0) as int,
+      referralCode: map['referralCode'] ?? '',
       referralCodeUsed: map['referralCodeUsed'] ?? '',
       signInMethod: map['signInMethod'] ?? 'email',
       emailVerified: map['emailVerified'] ?? false,

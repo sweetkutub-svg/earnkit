@@ -21,6 +21,7 @@ dependencies:
   package_info_plus: ^10.2.1
   http: ^1.6.0
   intl: ^0.20.3
+  share_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:

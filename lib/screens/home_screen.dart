@@ -295,6 +295,41 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
+                      InkWell(
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radius),
+                        onTap: () => context.push('/referral'),
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          decoration: BoxDecoration(
+                            color: AppColors.lightEmerald,
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radius),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.people_outline,
+                                  color: AppColors.emerald),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Refer & Earn',
+                                        style: AppTextStyles.h3CardTitle),
+                                    Text('Earn ₹5 per friend who joins',
+                                        style: AppTextStyles.caption),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right,
+                                  color: AppColors.emerald),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
                       Text('Earn More Tasks',
                           style: AppTextStyles.h2SectionHeader),
                       const SizedBox(height: AppSpacing.sm),

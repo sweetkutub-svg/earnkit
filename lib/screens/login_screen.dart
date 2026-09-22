@@ -57,15 +57,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isGoogleLoading = true);
-    final error = await _authService.signInWithGoogle();
+    final result = await _authService.signInWithGoogle();
     if (!mounted) return;
     setState(() => _isGoogleLoading = false);
 
-    if (error == null) {
-      context.go('/home'); // Google users are always verified
+    if (result.error == null) {
+      if (result.isNewUser) {
+        context.go('/post-signup');
+      } else {
+        context.go('/home');
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
+        SnackBar(content: Text(result.error!)),
       );
     }
   }

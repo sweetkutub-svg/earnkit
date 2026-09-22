@@ -15,7 +15,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _referralController = TextEditingController();
   final _authService = AuthService();
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -27,21 +26,24 @@ class _SignupScreenState extends State<SignupScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _referralController.dispose();
     super.dispose();
   }
 
   Future<void> _handleGoogleSignUp() async {
     setState(() => _isGoogleLoading = true);
-    final error = await _authService.signInWithGoogle();
+    final result = await _authService.signInWithGoogle();
     if (!mounted) return;
     setState(() => _isGoogleLoading = false);
 
-    if (error == null) {
-      context.go('/home');
+    if (result.error == null) {
+      if (result.isNewUser) {
+        context.go('/post-signup');
+      } else {
+        context.go('/home');
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
+        SnackBar(content: Text(result.error!)),
       );
     }
   }
@@ -50,7 +52,6 @@ class _SignupScreenState extends State<SignupScreen> {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    final referral = _referralController.text.trim();
 
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,14 +82,13 @@ class _SignupScreenState extends State<SignupScreen> {
       name: name,
       email: email,
       password: password,
-      referralCode: referral.isEmpty ? null : referral,
     );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (error == null) {
-      context.go('/verify-email');
+      context.go('/post-signup');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(error)),
@@ -126,7 +126,6 @@ class _SignupScreenState extends State<SignupScreen> {
             const Text('Start earning with Earnkit'),
             const SizedBox(height: 28),
 
-            // 1. Full Name
             TextField(
               controller: _nameController,
               keyboardType: TextInputType.name,
@@ -138,7 +137,6 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 2. Email
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -150,7 +148,6 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 3. Password
             TextField(
               controller: _passwordController,
               obscureText: _obscurePassword,
@@ -168,17 +165,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     });
                   },
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 4. Referral Code
-            TextField(
-              controller: _referralController,
-              decoration: const InputDecoration(
-                labelText: 'Referral Code (Optional)',
-                prefixIcon: Icon(Icons.card_giftcard_outlined),
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
@@ -227,7 +213,6 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 8),
 
-            // 5. Create Account button
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -246,7 +231,6 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 20),
 
-            // 6. Divider + Sign up with Google (moved down)
             Row(
               children: const [
                 Expanded(child: Divider()),
