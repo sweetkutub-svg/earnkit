@@ -43,7 +43,7 @@ class FirestoreService {
 
   Future<void> createWithdrawalRequest({
     required String uid,
-    required int amount,
+    required double amount,
     required String upiId,
   }) async {
     await _db.collection('withdrawals').add({

@@ -5,7 +5,7 @@ enum WithdrawalStatus { pending, approved, paid, rejected }
 class WithdrawalRequest {
   final String id;
   final String uid;
-  final int amount;
+  final double amount;
   final String upiId;
   final WithdrawalStatus status;
   final DateTime? requestedAt;
@@ -25,7 +25,7 @@ class WithdrawalRequest {
     return WithdrawalRequest(
       id: id,
       uid: map['uid'] ?? '',
-      amount: (map['amount'] ?? 0) as int,
+      amount: (map['amount'] ?? 0).toDouble(),
       upiId: map['upiId'] ?? '',
       status: _statusFromString(map['status'] ?? 'pending'),
       requestedAt: (map['requestedAt'] as Timestamp?)?.toDate(),

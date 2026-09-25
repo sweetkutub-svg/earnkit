@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/user_model.dart';
 import '../models/transaction_model.dart';
+import '../models/withdrawal_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
@@ -216,6 +217,99 @@ class WalletScreen extends StatelessWidget {
                         onPressed: () => context.go('/withdraw'),
                         child: const Text('Withdraw Funds'),
                       ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+
+                    Text('Withdrawal History',
+                        style: AppTextStyles.h2SectionHeader),
+                    const SizedBox(height: AppSpacing.md),
+
+                    StreamBuilder<List<WithdrawalRequest>>(
+                      stream: firestoreService.streamWithdrawals(uid),
+                      builder: (context, wSnapshot) {
+                        final withdrawals = wSnapshot.data ?? [];
+
+                        if (withdrawals.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return Column(
+                          children: withdrawals.map((w) {
+                            Color statusColor;
+                            String statusLabel;
+                            switch (w.status) {
+                              case WithdrawalStatus.paid:
+                                statusColor = AppColors.successGreen;
+                                statusLabel = 'Paid';
+                                break;
+                              case WithdrawalStatus.approved:
+                                statusColor = AppColors.infoBlue;
+                                statusLabel = 'Approved';
+                                break;
+                              case WithdrawalStatus.rejected:
+                                statusColor = AppColors.errorRed;
+                                statusLabel = 'Rejected';
+                                break;
+                              case WithdrawalStatus.pending:
+                                statusColor = AppColors.warningAmber;
+                                statusLabel = 'Pending';
+                                break;
+                            }
+                            return Container(
+                              margin: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm),
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: AppColors.white,
+                                borderRadius: BorderRadius.circular(
+                                    AppSpacing.radius),
+                                border:
+                                    Border.all(color: AppColors.gray200),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text('₹${w.amount.toStringAsFixed(2)}',
+                                            style:
+                                                AppTextStyles.h3CardTitle),
+                                        Text(
+                                          w.requestedAt != null
+                                              ? DateFormat('MMM d, h:mm a')
+                                                  .format(w.requestedAt!)
+                                              : 'Just now',
+                                          style: AppTextStyles.caption,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          statusColor.withValues(alpha: 0.12),
+                                      borderRadius:
+                                          BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      statusLabel,
+                                      style: TextStyle(
+                                        color: statusColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
                     ),
                     const SizedBox(height: AppSpacing.xl),
 
