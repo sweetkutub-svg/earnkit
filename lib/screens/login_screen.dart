@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
+import '../widgets/app_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,9 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
         context.go('/verify-email');
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
-      );
+      AppDialog.showError(context, error);
     }
   }
 
@@ -68,9 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
         context.go('/home');
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.error!)),
-      );
+      AppDialog.showError(context, result.error!);
     }
   }
 

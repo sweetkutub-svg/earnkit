@@ -22,6 +22,7 @@ dependencies:
   http: ^1.6.0
   intl: ^0.20.3
   share_plus: ^13.3.0
+  device_info_plus: ^13.2.0
 
 dev_dependencies:
   flutter_test:

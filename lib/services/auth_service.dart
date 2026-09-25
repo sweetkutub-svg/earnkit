@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'device_service.dart';
 
 class GoogleSignInResult {
   final String? error;
@@ -13,6 +14,7 @@ class AuthService {
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final DeviceService _deviceService = DeviceService();
   bool _googleInitialized = false;
 
   fb_auth.User? get currentUser => _auth.currentUser;
@@ -36,13 +38,12 @@ class AuthService {
     return '${uid.substring(0, 6).toUpperCase()}${rand.nextInt(99)}';
   }
 
-  // Called from the post-signup screen, not during signup itself.
   Future<String?> linkReferralCode(String rawCode) async {
     final uid = currentUser?.uid;
     if (uid == null) return 'Not logged in';
 
     final code = rawCode.trim().toUpperCase();
-    if (code.isEmpty) return null; // nothing to link, not an error
+    if (code.isEmpty) return null;
 
     try {
       final userRef = _firestore.collection('users').doc(uid);
@@ -78,6 +79,34 @@ class AuthService {
     }
   }
 
+  // Returns null if OK to proceed, or an error message if this device
+  // already has an account registered (Phase 15 fraud check).
+  Future<String?> _checkAndRegisterDevice(String uid) async {
+    try {
+      final deviceId = await _deviceService.getDeviceId();
+      if (deviceId == 'unknown_platform') return null; // don't block non-Android
+
+      final deviceRef = _firestore.collection('devices').doc(deviceId);
+      final deviceSnap = await deviceRef.get();
+
+      if (deviceSnap.exists) {
+        final existingUid = deviceSnap.data()?['uid'];
+        if (existingUid != null && existingUid != uid) {
+          return 'An account already exists on this device. Multiple accounts per device are not allowed.';
+        }
+      }
+
+      await deviceRef.set({
+        'uid': uid,
+        'registeredAt': FieldValue.serverTimestamp(),
+      });
+      return null;
+    } catch (_) {
+      // Don't block signup if the device check itself fails (e.g. offline)
+      return null;
+    }
+  }
+
   Future<String?> signUp({
     required String name,
     required String email,
@@ -90,6 +119,13 @@ class AuthService {
       );
 
       final uid = credential.user!.uid;
+
+      final deviceError = await _checkAndRegisterDevice(uid);
+      if (deviceError != null) {
+        await credential.user!.delete();
+        return deviceError;
+      }
+
       await credential.user!.updateDisplayName(name);
 
       final myReferralCode = await _generateReferralCode(uid);
@@ -112,7 +148,7 @@ class AuthService {
 
       return null;
     } on fb_auth.FirebaseAuthException catch (e) {
-      return e.message ?? 'Signup failed. Please try again.';
+      return _friendlyAuthError(e.code);
     } catch (e) {
       return 'Something went wrong. Please try again.';
     }
@@ -126,9 +162,30 @@ class AuthService {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       return null;
     } on fb_auth.FirebaseAuthException catch (e) {
-      return e.message ?? 'Login failed. Please try again.';
+      return _friendlyAuthError(e.code);
     } catch (e) {
       return 'Something went wrong. Please try again.';
+    }
+  }
+
+  String _friendlyAuthError(String code) {
+    switch (code) {
+      case 'invalid-credential':
+      case 'wrong-password':
+      case 'user-not-found':
+        return 'Incorrect email or password. Please try again.';
+      case 'invalid-email':
+        return 'That email address looks invalid.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait a bit and try again.';
+      case 'email-already-in-use':
+        return 'An account already exists with this email.';
+      case 'weak-password':
+        return 'Please choose a stronger password.';
+      default:
+        return 'Something went wrong. Please try again.';
     }
   }
 
@@ -159,6 +216,13 @@ class AuthService {
       bool isNewUser = false;
 
       if (!docSnap.exists) {
+        final deviceError = await _checkAndRegisterDevice(uid);
+        if (deviceError != null) {
+          await _auth.signOut();
+          await _googleSignIn.signOut();
+          return GoogleSignInResult(error: deviceError);
+        }
+
         isNewUser = true;
         final myReferralCode = await _generateReferralCode(uid);
 
