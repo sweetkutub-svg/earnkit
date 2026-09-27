@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/ad_service.dart';
+import '../services/device_service.dart';
 import '../models/user_model.dart';
 import '../models/transaction_model.dart';
 import '../widgets/app_dialog.dart';
@@ -22,13 +23,23 @@ class _HomeScreenState extends State<HomeScreen> {
   final _authService = AuthService();
   final _firestoreService = FirestoreService();
   final _adService = AdService();
+  final _deviceService = DeviceService();
   bool _isAdLoading = false;
+  bool _isDeviceFlagged = false;
   static const int _dailyAdCap = 20;
 
   @override
   void initState() {
     super.initState();
-    _loadAd();
+    _checkDeviceAndLoadAd();
+  }
+
+  Future<void> _checkDeviceAndLoadAd() async {
+    final flagged = await _deviceService.isDeviceFlagged();
+    if (mounted) setState(() => _isDeviceFlagged = flagged);
+    if (!flagged) {
+      _loadAd();
+    }
   }
 
   void _loadAd() {
@@ -160,8 +171,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
-                      // Watch Ad & Earn card — with live daily-cap tracking
-                      StreamBuilder<List<AppTransaction>>(
+                      if (_isDeviceFlagged)
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          decoration: BoxDecoration(
+                            color: AppColors.gray100,
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radius),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.block,
+                                  color: AppColors.gray600),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Text(
+                                  'Ad-earning is disabled on this device for security reasons.',
+                                  style: AppTextStyles.bodyText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        StreamBuilder<List<AppTransaction>>(
                         stream: _firestoreService.streamTransactions(uid),
                         builder: (context, txSnapshot) {
                           final allTx = txSnapshot.data ?? [];
