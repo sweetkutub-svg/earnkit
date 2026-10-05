@@ -4,6 +4,8 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/ad_service.dart';
 import '../services/device_service.dart';
+import '../services/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/user_model.dart';
 import '../models/transaction_model.dart';
 import '../widgets/app_dialog.dart';
@@ -40,6 +42,13 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!flagged) {
       _loadAd();
     }
+    await NotificationService().init();
+    FirebaseMessaging.onMessage.listen((message) {
+      if (!mounted) return;
+      final title = message.notification?.title ?? 'Earnkit';
+      final body = message.notification?.body ?? '';
+      AppDialog.show(context, title: title, message: body);
+    });
   }
 
   void _loadAd() {

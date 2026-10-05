@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/remote_config_service.dart';
 import 'maintenance_screen.dart';
@@ -54,7 +55,28 @@ class _SplashScreenState extends State<SplashScreen> {
     final user = _authService.currentUser;
     if (user == null) {
       context.go('/onboarding');
-    } else if (!_authService.isEmailVerified) {
+      return;
+    }
+
+    // Check ban status before anything else
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    if (userDoc.exists && (userDoc.data()?['banned'] == true)) {
+      await _authService.signOut();
+      if (mounted) {
+        setState(() {
+          _blockingScreen = MaintenanceScreen(
+            message:
+                'Your account has been suspended. Contact support if you believe this is a mistake.',
+          );
+        });
+      }
+      return;
+    }
+
+    if (!_authService.isEmailVerified) {
       context.go('/verify-email');
     } else {
       context.go('/home');

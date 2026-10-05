@@ -24,6 +24,7 @@ dependencies:
   share_plus: ^13.3.0
   device_info_plus: ^13.2.0
   safe_device: ^1.4.1
+  firebase_messaging: ^16.7.0
 
 dev_dependencies:
   flutter_test:
