@@ -25,6 +25,7 @@ dependencies:
   device_info_plus: ^13.2.0
   safe_device: ^1.4.1
   firebase_messaging: ^16.7.0
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

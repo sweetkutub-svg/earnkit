@@ -3,6 +3,7 @@ import '../models/user_model.dart';
 import '../models/transaction_model.dart';
 import '../models/withdrawal_model.dart';
 import '../models/referral_model.dart';
+import '../models/task_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -93,4 +94,17 @@ class FirestoreService {
             .map((doc) => ReferralRecord.fromMap(doc.id, doc.data()))
             .toList());
   }
+
+  // ---------- TASKS (admin-managed, Phase 12/17) ----------
+
+  Stream<List<AppTask>> streamActiveTasks() {
+    return _db
+        .collection('tasks')
+        .where('active', isEqualTo: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((doc) => AppTask.fromMap(doc.id, doc.data()))
+            .toList());
+  }
+
 }

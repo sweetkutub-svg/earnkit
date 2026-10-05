@@ -56,7 +56,9 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         context,
         title: 'Not Eligible Yet',
         message:
-            'You need ${summary.pointsNeeded} more Earnkit Points to unlock withdrawal. Keep watching ads!',
+            'You need ${summary.pointsNeeded} more Earnkit Points to unlock withdrawal.\n\n'
+            'Once you reach ${summary.minWithdrawalPoints} points, they\'ll convert to ₹, '
+            'and any unlocked bonus (₹${summary.unlockedBonus}) will be added on top. Keep watching ads!',
         icon: Icons.hourglass_empty,
         iconColor: AppColors.warningAmber,
       );
