@@ -89,4 +89,18 @@ class FirestoreService {
             .map((doc) => ReferralRecord.fromMap(doc.id, doc.data()))
             .toList());
   }
+  
+  // ---------- TASK PROGRESS (how many times a user completed each task) ----------
+
+  Stream<Map<String, int>> streamCompletedCounts(String uid) {
+    return _db
+        .collection('task_progress')
+        .where('uid', isEqualTo: uid)
+        .snapshots()
+        .map((snap) => {
+              for (final d in snap.docs)
+                (d.data()['taskId'] as String? ?? ''):
+                    ((d.data()['completedCount'] ?? 0) as num).toInt(),
+            });
+  }
 }

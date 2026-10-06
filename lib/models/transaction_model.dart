@@ -12,8 +12,9 @@ class AppTransaction {
   final String id;
   final String uid;
   final TransactionType type;
-  final int amount; // in EarnGrow Points, always server-set
+  final int amount; // in Earnkit Points
   final String source;
+  final String taskTitle;
   final DateTime? timestamp;
 
   AppTransaction({
@@ -23,6 +24,7 @@ class AppTransaction {
     required this.amount,
     required this.source,
     required this.timestamp,
+    this.taskTitle = '',
   });
 
   factory AppTransaction.fromMap(String id, Map<String, dynamic> map) {
@@ -30,8 +32,9 @@ class AppTransaction {
       id: id,
       uid: map['uid'] ?? '',
       type: _typeFromString(map['type'] ?? ''),
-      amount: (map['amount'] ?? 0) as int,
+      amount: ((map['amount'] ?? 0) as num).toInt(),
       source: map['source'] ?? '',
+      taskTitle: map['taskTitle'] ?? '',
       timestamp: (map['timestamp'] as Timestamp?)?.toDate(),
     );
   }

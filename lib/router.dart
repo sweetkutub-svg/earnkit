@@ -9,6 +9,8 @@ import 'screens/privacy_policy_screen.dart';
 import 'screens/referral_screen.dart';
 import 'screens/post_signup_referral_screen.dart';
 import 'screens/earn_more_screen.dart';
+import 'screens/task_detail_screen.dart';
+import 'models/task_model.dart';
 import 'screens/home_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/withdraw_screen.dart';
@@ -19,36 +21,47 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(
-        path: '/onboarding',
-        builder: (context, state) => const OnboardingScreen()),
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
     GoRoute(
-        path: '/signup', builder: (context, state) => const SignupScreen()),
-    GoRoute(
-        path: '/verify-email',
-        builder: (context, state) => const VerifyEmailScreen()),
+      path: '/verify-email',
+      builder: (context, state) => const VerifyEmailScreen(),
+    ),
     GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
     GoRoute(
-        path: '/privacy',
-        builder: (context, state) => const PrivacyPolicyScreen()),
+      path: '/privacy',
+      builder: (context, state) => const PrivacyPolicyScreen(),
+    ),
     GoRoute(
-        path: '/referral',
-        builder: (context, state) => const ReferralScreen()),
+      path: '/referral',
+      builder: (context, state) => const ReferralScreen(),
+    ),
     GoRoute(
-        path: '/post-signup',
-        builder: (context, state) => const PostSignupReferralScreen()),
+      path: '/post-signup',
+      builder: (context, state) => const PostSignupReferralScreen(),
+    ),
     GoRoute(
-        path: '/earn-more',
-        builder: (context, state) => const EarnMoreScreen()),
+      path: '/earn-more',
+      builder: (context, state) => const EarnMoreScreen(),
+    ),
+    GoRoute(
+      path: '/task',
+      builder: (context, state) =>
+          TaskDetailScreen(task: state.extra as AppTask),
+    ),
 
-    GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+    GoRoute(path: '/tasks', builder: (context, state) => const EarnMoreScreen()), GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+    GoRoute(path: '/wallet', builder: (context, state) => const WalletScreen()),
     GoRoute(
-        path: '/wallet', builder: (context, state) => const WalletScreen()),
+      path: '/withdraw',
+      builder: (context, state) => const WithdrawScreen(),
+    ),
     GoRoute(
-        path: '/withdraw',
-        builder: (context, state) => const WithdrawScreen()),
-    GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfileScreen()),
+      path: '/profile',
+      builder: (context, state) => const ProfileScreen(),
+    ),
   ],
 );

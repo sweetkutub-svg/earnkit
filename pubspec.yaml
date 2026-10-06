@@ -26,8 +26,12 @@ dependencies:
   safe_device: ^1.4.1
   firebase_messaging: ^16.7.0
   url_launcher: ^6.3.3
+  image_picker: ^1.2.4
+  google_fonts: ^8.2.1
+  flutter_local_notifications: ^22.3.1
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.14.0
   flutter_test:
     sdk: flutter
 
@@ -38,3 +42,12 @@ flutter:
 
   assets:
     - assets/images/google_logo.png
+    - assets/images/splash_logo.png
+    - assets/images/splash_mascot.png
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#065F46"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"

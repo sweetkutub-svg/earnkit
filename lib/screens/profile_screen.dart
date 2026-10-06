@@ -8,6 +8,7 @@ import '../models/user_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -180,35 +181,7 @@ class ProfileScreen extends StatelessWidget {
                 );
               },
             ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.emerald,
-        currentIndex: 3,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/wallet');
-              break;
-            case 2:
-              context.go('/withdraw');
-              break;
-            case 3:
-              context.go('/profile');
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet), label: 'Wallet'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.currency_rupee), label: 'Withdraw'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 4),
     );
   }
 }

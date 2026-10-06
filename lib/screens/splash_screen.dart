@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/remote_config_service.dart';
 import 'maintenance_screen.dart';
 import 'force_update_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -83,23 +84,49 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  @override
+      @override
   Widget build(BuildContext context) {
     if (_blockingScreen != null) return _blockingScreen!;
 
-    return Container(
-      color: AppColors.deepTeal,
-      child: const Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(
-          child: Text(
-            'Earnkit',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+    return Scaffold(
+      backgroundColor: AppColors.deepTeal,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.6, end: 1.0),
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.elasticOut,
+              builder: (context, scale, child) =>
+                  Transform.scale(scale: scale, child: child),
+              child: Image.asset(
+                'assets/images/splash_mascot.png',
+                width: 190,
+                height: 190,
+                errorBuilder: (_, __, ___) => const SizedBox(height: 190),
+              ),
             ),
-          ),
+            const SizedBox(height: 12),
+            const Text(
+              'Earnkit',
+              style: TextStyle(
+                fontSize: 34,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Your Earning Mentor',
+              style: GoogleFonts.caveat(
+                fontSize: 26,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFFF5B301),
+              ),
+            ),
+          ],
         ),
       ),
     );

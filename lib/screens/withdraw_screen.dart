@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../services/wallet_summary_service.dart';
 import '../widgets/app_dialog.dart';
 import '../theme/app_colors.dart';
+import '../widgets/app_bottom_nav.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
@@ -256,35 +257,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                     ],
                   ),
                 ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.emerald,
-        currentIndex: 2,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/wallet');
-              break;
-            case 2:
-              context.go('/withdraw');
-              break;
-            case 3:
-              context.go('/profile');
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet), label: 'Wallet'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.currency_rupee), label: 'Withdraw'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
     );
   }
 } 
