@@ -59,3 +59,12 @@ build/
 *.jks
 *.keystore
 key.properties
+
+*.bak
+build/
+.dart_tool/
+.env
+.env.*
+*.jks
+*.keystore
+key.properties
