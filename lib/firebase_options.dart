@@ -51,12 +51,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBlk3LazxXgserX9bLPPIYucpfZBwRPM4M',
-    appId: '1:347498236078:android:30c6ddb9bbb033d4d2853f',
+    appId: '1:347498236078:android:efa6bb2110079242d2853f',
     messagingSenderId: '347498236078',
     projectId: 'earnkit-app',
     storageBucket: 'earnkit-app.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCqRL6zfMy6_WWaiNJFr8ggjdDph1UCzgQ',
     appId: '1:347498236078:ios:0ae71c42dbfd9905d2853f',
