@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 class WalletSummary {
@@ -36,10 +37,20 @@ class WalletSummary {
 class WalletSummaryService {
   static const String _baseUrl = 'https://earnkit-backend.vercel.app';
 
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
   Future<WalletSummary?> fetchSummary(String uid) async {
     try {
-      final response = await http
-          .get(Uri.parse('$_baseUrl/api/get-wallet-summary?uid=$uid'));
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/get-wallet-summary?uid=$uid'),
+        headers: await _authHeaders(),
+      );
       if (response.statusCode == 200) {
         return WalletSummary.fromJson(jsonDecode(response.body));
       }
@@ -56,8 +67,8 @@ class WalletSummaryService {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/api/submit-withdrawal'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'uid': uid, 'upiId': upiId}),
+        headers: await _authHeaders(),
+        body: jsonEncode({'upiId': upiId}),
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {

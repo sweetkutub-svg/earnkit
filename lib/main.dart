@@ -9,12 +9,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   runApp(const EarnkitApp());
-  // Initialize Mobile Ads SDK in the background — don't block app startup.
+  // Initialize the Mobile Ads SDK in the background so app startup isn't blocked.
   MobileAds.instance.initialize();
 }
 

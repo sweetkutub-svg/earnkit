@@ -5,6 +5,7 @@ import '../services/firestore_service.dart';
 import '../models/task_model.dart';
 import '../models/task_submission_model.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/banner_ad_widget.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
@@ -245,9 +246,17 @@ class _EarnMoreScreenState extends State<EarnMoreScreen>
               ? _emptyState('No matching tasks', 'Try a different name or code.')
               : ListView.builder(
                   padding: const EdgeInsets.all(AppSpacing.lg),
-                  itemCount: shown.length,
+                  itemCount: shown.length + shown.length ~/ 3,
                   itemBuilder: (context, i) {
-                    final task = shown[i];
+                    // One banner after every 3rd task.
+                    if ((i + 1) % 4 == 0) {
+                      return const Padding(
+                        padding: EdgeInsets.only(
+                            top: AppSpacing.sm, bottom: AppSpacing.lg),
+                        child: Center(child: BannerAdWidget(labeled: true)),
+                      );
+                    }
+                    final task = shown[i - (i + 1) ~/ 4];
                     final sub = byTask[task.id];
                     final (chipColor, chipLabel) = _chipInfo(task, sub, counts);
                     return InkWell(

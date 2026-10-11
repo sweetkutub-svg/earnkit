@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
+import 'legal_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -193,7 +194,12 @@ class _SignupScreenState extends State<SignupScreen> {
                               fontWeight: FontWeight.w600,
                               decoration: TextDecoration.underline),
                           recognizer: TapGestureRecognizer()
-                            ..onTap = () => context.push('/terms'),
+                            ..onTap = () => Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => const LegalScreen(
+                                  title: 'Terms of Service',
+                                  field: 'termsOfService',
+                                ),
+                              )),
                         ),
                         const TextSpan(text: ' & '),
                         TextSpan(
@@ -203,7 +209,12 @@ class _SignupScreenState extends State<SignupScreen> {
                               fontWeight: FontWeight.w600,
                               decoration: TextDecoration.underline),
                           recognizer: TapGestureRecognizer()
-                            ..onTap = () => context.push('/privacy'),
+                            ..onTap = () => Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => const LegalScreen(
+                                  title: 'Privacy Policy',
+                                  field: 'privacyPolicy',
+                                ),
+                              )),
                         ),
                       ],
                     ),

@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/banner_ad_widget.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -220,6 +221,7 @@ class WalletScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
+                    const BannerAdWidget(),
 
                     Text('Withdrawal History',
                         style: AppTextStyles.h2SectionHeader),

@@ -7,9 +7,11 @@ import '../models/task_submission_model.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/cloudinary_service.dart';
+import '../services/ad_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/banner_ad_widget.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final AppTask task;
@@ -25,6 +27,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   final _cloudinary = CloudinaryService();
   File? _picked;
   bool _busy = false;
+  static int _applyCount = 0;
 
   void _toast(String msg) {
     if (!mounted) return;
@@ -36,6 +39,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     if (uid == null) return;
     setState(() => _busy = true);
     try {
+      _applyCount++;
+      if (_applyCount % 3 == 0) {
+        await AdService().watchGateAd();
+      }
       await _fs.applyToTask(uid: uid, task: widget.task);
       _toast('Applied! Complete within ${widget.task.durationHours} hours.');
     } catch (e) {
@@ -47,7 +54,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery, imageQuality: 80, maxWidth: 1280);
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 1280,
+    );
     if (picked != null) setState(() => _picked = File(picked.path));
   }
 
@@ -60,13 +70,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
     setState(() => _busy = true);
     try {
+      final allowed = await AdService().watchGateAd();
+      if (!allowed) {
+        _toast('Please watch the full ad to submit your proof.');
+        return;
+      }
       final url = await _cloudinary.uploadImage(_picked!.path);
       if (url == null) {
         _toast('Upload failed, please try again');
         return;
       }
       await _fs.submitScreenshot(
-          uid: uid, taskId: widget.task.id, screenshotUrl: url);
+        uid: uid,
+        taskId: widget.task.id,
+        screenshotUrl: url,
+      );
       _picked = null;
       _toast('Submitted! Verification pending.');
     } catch (e) {
@@ -99,28 +117,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Widget _box({required Color color, required Widget child}) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(AppSpacing.radius),
-        ),
-        child: child,
-      );
+    width: double.infinity,
+    padding: const EdgeInsets.all(AppSpacing.lg),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(AppSpacing.radius),
+    ),
+    child: child,
+  );
 
   Widget _applyButton(String label) => SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: _busy ? null : _apply,
-          child: _busy
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
-              : Text(label),
-        ),
-      );
+    width: double.infinity,
+    child: ElevatedButton(
+      onPressed: _busy ? null : _apply,
+      child: _busy
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : Text(label),
+    ),
+  );
 
   Widget _uploadSection() {
     return Column(
@@ -147,8 +168,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.upload_file,
-                            color: AppColors.gray400, size: 32),
+                        Icon(
+                          Icons.upload_file,
+                          color: AppColors.gray400,
+                          size: 32,
+                        ),
                         SizedBox(height: 8),
                         Text('Tap to select screenshot'),
                       ],
@@ -166,8 +190,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : const Text('Submit for Verification'),
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Watch Ad & Submit'),
           ),
         ),
       ],
@@ -193,12 +220,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
           ],
-          Text('Complete within ${task.durationHours} hours after applying.',
-              style: AppTextStyles.caption),
+          Text(
+            'Complete within ${task.durationHours} hours after applying.',
+            style: AppTextStyles.caption,
+          ),
           const SizedBox(height: AppSpacing.sm),
-          _applyButton(st == SubmissionStatus.expired
-              ? 'Apply Again (+${task.rewardPoints})'
-              : 'Apply (+${task.rewardPoints})'),
+          _applyButton(
+            st == SubmissionStatus.expired
+                ? 'Apply Again (+${task.rewardPoints})'
+                : 'Apply (+${task.rewardPoints})',
+          ),
         ],
       );
     }
@@ -223,8 +254,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Approved — ${sub.rewardPoints} points credited',
-                          style: AppTextStyles.h3CardTitle),
+                      Text(
+                        'Approved — ${sub.rewardPoints} points credited',
+                        style: AppTextStyles.h3CardTitle,
+                      ),
                       const SizedBox(height: 2),
                       Text(progress, style: AppTextStyles.caption),
                     ],
@@ -235,13 +268,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ),
           const SizedBox(height: AppSpacing.md),
           if (canRepeat) ...[
-            Text('Complete within ${task.durationHours} hours after applying.',
-                style: AppTextStyles.caption),
+            Text(
+              'Complete within ${task.durationHours} hours after applying.',
+              style: AppTextStyles.caption,
+            ),
             const SizedBox(height: AppSpacing.sm),
             _applyButton('Do Again (+${task.rewardPoints})'),
           ] else
-            Text('You have reached the limit for this task.',
-                style: AppTextStyles.caption),
+            Text(
+              'You have reached the limit for this task.',
+              style: AppTextStyles.caption,
+            ),
         ],
       );
     }
@@ -257,8 +294,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 const Icon(Icons.hourglass_empty, color: AppColors.gray600),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: Text('Submitted — verification pending',
-                      style: AppTextStyles.h3CardTitle),
+                  child: Text(
+                    'Submitted — verification pending',
+                    style: AppTextStyles.h3CardTitle,
+                  ),
                 ),
               ],
             ),
@@ -266,10 +305,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               const SizedBox(height: AppSpacing.md),
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(sub.screenshotUrl,
-                    height: 140,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                child: Image.network(
+                  sub.screenshotUrl,
+                  height: 140,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
             ],
           ],
@@ -303,9 +344,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           const SizedBox(height: AppSpacing.md),
           _box(
             color: AppColors.errorRed.withValues(alpha: 0.08),
-            child: Text('Reason: ${sub.reviewNote}',
-                style: AppTextStyles.bodyText
-                    .copyWith(color: AppColors.errorRed)),
+            child: Text(
+              'Reason: ${sub.reviewNote}',
+              style: AppTextStyles.bodyText.copyWith(color: AppColors.errorRed),
+            ),
           ),
         ],
         if (task.url.trim().isNotEmpty) ...[
@@ -340,25 +382,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             if (task.imageUrl.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppSpacing.radius),
-                child: Image.network(task.imageUrl,
-                    width: double.infinity,
-                    height: 190,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                child: Image.network(
+                  task.imageUrl,
+                  width: double.infinity,
+                  height: 190,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
             const SizedBox(height: AppSpacing.md),
             if (task.codeLabel.isNotEmpty)
-              Text('${task.codeLabel}  •  ${task.limitLabel}',
-                  style:
-                      AppTextStyles.caption.copyWith(color: AppColors.emerald)),
+              Text(
+                '${task.codeLabel}  •  ${task.limitLabel}',
+                style: AppTextStyles.caption.copyWith(color: AppColors.emerald),
+              ),
             Row(
               children: [
                 Expanded(
-                    child: Text(task.title,
-                        style: AppTextStyles.h2SectionHeader)),
-                Text('+${task.rewardPoints}',
-                    style: AppTextStyles.h2SectionHeader
-                        .copyWith(color: AppColors.emerald)),
+                  child: Text(task.title, style: AppTextStyles.h2SectionHeader),
+                ),
+                Text(
+                  '+${task.rewardPoints}',
+                  style: AppTextStyles.h2SectionHeader.copyWith(
+                    color: AppColors.emerald,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -374,16 +422,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline,
-                      color: AppColors.gold, size: 18),
+                  const Icon(
+                    Icons.info_outline,
+                    color: AppColors.gold,
+                    size: 18,
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       task.note.isNotEmpty
                           ? task.note
                           : 'Complete the task and upload a screenshot as proof.',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.gold),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.gold,
+                      ),
                     ),
                   ),
                 ],
@@ -411,6 +463,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   );
                 },
               ),
+            const Divider(
+              height: AppSpacing.xl,
+              thickness: 1,
+              color: AppColors.gray200,
+            ),
+            const Center(child: BannerAdWidget()),
           ],
         ),
       ),

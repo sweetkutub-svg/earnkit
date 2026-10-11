@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
+import '../services/referral_link_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
 class PostSignupReferralScreen extends StatefulWidget {
@@ -17,6 +17,24 @@ class _PostSignupReferralScreenState extends State<PostSignupReferralScreen> {
   final _codeController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
+  bool _locked = false; // true when the code came from an invite link
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPending());
+  }
+
+  Future<void> _loadPending() async {
+    final pending = await ReferralLinkService.getPending() ??
+        await ReferralLinkService.detectFromClipboard();
+    if (pending != null && mounted) {
+      setState(() {
+        _codeController.text = pending;
+        _locked = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -36,6 +54,7 @@ class _PostSignupReferralScreenState extends State<PostSignupReferralScreen> {
         );
       }
     }
+    await ReferralLinkService.clearPending();
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -59,7 +78,7 @@ class _PostSignupReferralScreenState extends State<PostSignupReferralScreen> {
               Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   shape: BoxShape.circle,
                 ),
@@ -67,25 +86,35 @@ class _PostSignupReferralScreenState extends State<PostSignupReferralScreen> {
                     size: 48, color: Colors.white),
               ),
               const SizedBox(height: AppSpacing.xl),
-              const Text(
-                'Got a Referral Code?',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              Text(
+                _locked ? 'Invite Code Applied' : 'Got a Referral Code?',
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),
-              const Text(
-                'If a friend invited you, enter their code below.\nOtherwise, just tap Next.',
+              Text(
+                _locked
+                    ? "You joined through a friend's invite link.\nTap Next to continue."
+                    : 'If a friend invited you, enter their code below.\nOtherwise, just tap Next.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.gray600),
+                style: const TextStyle(color: AppColors.gray600),
               ),
               const SizedBox(height: AppSpacing.xl),
               TextField(
                 controller: _codeController,
+                readOnly: _locked,
                 textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Referral Code (Optional)',
-                  prefixIcon: Icon(Icons.card_giftcard_outlined),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText:
+                      _locked ? 'Referral Code' : 'Referral Code (Optional)',
+                  prefixIcon: const Icon(Icons.card_giftcard_outlined),
+                  suffixIcon: _locked
+                      ? const Icon(Icons.lock, color: AppColors.emerald)
+                      : null,
+                  helperText:
+                      _locked ? 'Locked, applied from invite link' : null,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),

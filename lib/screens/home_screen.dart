@@ -1,3 +1,4 @@
+import '../widgets/banner_ad_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -5,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/ad_service.dart';
 import '../services/device_service.dart';
+import '../services/fraud_report_service.dart';
 import '../services/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/user_model.dart';
@@ -42,6 +44,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _checkDeviceAndLoadAd() async {
     final flagged = await _deviceService.isDeviceFlagged();
     if (mounted) setState(() => _isDeviceFlagged = flagged);
+    if (flagged) {
+      FraudReportService.reportOncePerSession(
+        'EMULATOR_OR_ROOT',
+        deviceId: await _deviceService.getDeviceId(),
+      );
+    }
     if (!flagged) {
       _loadAd();
     }
@@ -294,6 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
+                      const BannerAdWidget(),
 
                       if (_isDeviceFlagged)
                         Container(
@@ -488,6 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
+                    
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -500,6 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.sm),
+                      
 
                       // Live tasks from Firestore (first 3)
                       StreamBuilder<List<AppTask>>(
@@ -521,6 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (tasks.isEmpty) {
                             return _buildEmptyTasks();
                           }
+                          
 
                           return Column(
                             children: tasks.map(_buildTaskCard).toList(),
@@ -532,7 +544,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 0), 
+      
     );
   }
 }

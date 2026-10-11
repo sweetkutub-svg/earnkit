@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'device_service.dart';
+import 'fraud_report_service.dart';
 
 class GoogleSignInResult {
   final String? error;
@@ -121,6 +122,10 @@ class AuthService {
       final uid = credential.user!.uid;
 
       final deviceError = await _checkAndRegisterDevice(uid);
+      if (deviceError != null) {
+        await FraudReportService.report('DEVICE_REUSE_ATTEMPT',
+            deviceId: await _deviceService.getDeviceId());
+      }
       if (deviceError != null) {
         await credential.user!.delete();
         return deviceError;

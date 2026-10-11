@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
 import '../widgets/app_dialog.dart';
+import 'legal_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,6 +24,35 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Widget _consentText() {
+    final color = Theme.of(context).colorScheme.primary;
+    Widget link(String label, String title, String field) => GestureDetector(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => LegalScreen(title: title, field: field),
+          )),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        );
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        const Text('By continuing you agree to our ',
+            style: TextStyle(fontSize: 12)),
+        link('Terms', 'Terms of Service', 'termsOfService'),
+        const Text(' & ', style: TextStyle(fontSize: 12)),
+        link('Privacy Policy', 'Privacy Policy', 'privacyPolicy'),
+      ],
+    );
   }
 
   Future<void> _handleLogin() async {
@@ -206,6 +236,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            _consentText(),
+            const SizedBox(height: 8),
             Center(
               child: TextButton(
                 onPressed: () => context.push('/signup'),
