@@ -1,4 +1,5 @@
-import '../widgets/banner_ad_widget.dart';
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,9 +14,9 @@ import '../models/user_model.dart';
 import '../models/transaction_model.dart';
 import '../models/task_model.dart';
 import '../widgets/app_dialog.dart';
+import '../widgets/app_bottom_nav.dart';
 import '../widgets/bonus_unlocked_dialog.dart';
 import '../theme/app_colors.dart';
-import '../widgets/app_bottom_nav.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
@@ -33,11 +34,42 @@ class _HomeScreenState extends State<HomeScreen> {
   final _deviceService = DeviceService();
   bool _isAdLoading = false;
   bool _isDeviceFlagged = false;
-  static const int _dailyAdCap = 20;
+  DateTime? _optimisticLastAd;
+  Stream<AppUser?>? _userStream;
+  Stream<List<AppTransaction>>? _txStream;
+  Stream<List<AppTask>>? _taskStream;
+  int _dailyAdCap = 20; // defaults, overridden by app_config/reward_config
+  int _adGapSeconds = 10;
+  int _referralBonus = 5;
+  int _referralPoints = 110;
+
+  Future<void> _loadRewardConfig() async {
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('app_config')
+          .doc('reward_config')
+          .get();
+      final d = snap.data();
+      if (d == null || !mounted) return;
+      final cap = (d['dailyAdCap'] as num?)?.toInt();
+      final gap = (d['adGapSeconds'] as num?)?.toInt();
+      final refBonus = (d['referralBonusAmount'] as num?)?.toInt();
+      final refPoints = (d['referralUnlockPoints'] as num?)?.toInt();
+      setState(() {
+        if (cap != null && cap > 0) _dailyAdCap = cap;
+        if (gap != null && gap >= 5) _adGapSeconds = gap;
+        if (refBonus != null && refBonus > 0) _referralBonus = refBonus;
+        if (refPoints != null && refPoints > 0) _referralPoints = refPoints;
+      });
+    } catch (_) {
+      // keep defaults
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    _loadRewardConfig();
     _checkDeviceAndLoadAd();
   }
 
@@ -55,10 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     await NotificationService().init();
     FirebaseMessaging.onMessage.listen((message) {
-      if (message.data['type'] == 'payment') {
-        NotificationService.showPayment(message);
-        return;
-      }
       if (!mounted) return;
       final title = message.notification?.title ?? 'Earnkit';
       final body = message.notification?.body ?? '';
@@ -85,6 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _adService.showRewardedAd(
       onEarnedReward: (pointsCredited, bonusUnlocked, bonusAmount) {
         if (!mounted) return;
+        setState(() => _optimisticLastAd = DateTime.now());
         if (bonusUnlocked) {
           BonusUnlockedDialog.show(context, bonusAmount);
         } else {
@@ -147,6 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSpacing.radius),
         border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
       ),
       child: Row(
         children: [
@@ -168,12 +198,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: AppTextStyles.h3CardTitle
                       .copyWith(color: AppColors.emerald)),
               ElevatedButton(
-                onPressed: () => context.push('/task', extra: task),
+                onPressed: () => _openTask(task.url),
                 style: ElevatedButton.styleFrom(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
-                child: const Text('View'),
+                child: const Text('Start'),
               ),
             ],
           ),
@@ -185,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildEmptyTasks() {
     return InkWell(
       borderRadius: BorderRadius.circular(AppSpacing.radius),
-      onTap: () => context.go('/tasks'),
+      onTap: () => context.push('/earn-more'),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -193,6 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
           color: AppColors.white,
           borderRadius: BorderRadius.circular(AppSpacing.radius),
           border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
         ),
         child: Column(
           children: [
@@ -200,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.gray400, size: 32),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'No tasks available yet — check back soon!',
+              'No tasks available yet. Check back soon!',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyText,
             ),
@@ -219,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: uid == null
           ? const Center(child: Text('Not logged in'))
           : StreamBuilder<AppUser?>(
-              stream: _firestoreService.streamUserData(uid),
+              stream: _userStream ??= _firestoreService.streamUserData(uid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -302,7 +333,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                      const BannerAdWidget(),
 
                       if (_isDeviceFlagged)
                         Container(
@@ -328,135 +358,41 @@ class _HomeScreenState extends State<HomeScreen> {
                         )
                       else
                         StreamBuilder<List<AppTransaction>>(
-                          stream: _firestoreService.streamTransactions(uid),
+                          stream: _txStream ??= _firestoreService.streamTransactions(uid),
                           builder: (context, txSnapshot) {
                             final allTx = txSnapshot.data ?? [];
                             final now = DateTime.now();
                             final todayStart =
                                 DateTime(now.year, now.month, now.day);
-                            final adsWatchedToday = allTx
-                                .where((tx) =>
-                                    tx.type == TransactionType.adWatched &&
-                                    tx.timestamp != null &&
-                                    tx.timestamp!.isAfter(todayStart))
-                                .length;
-                            final capReached = adsWatchedToday >= _dailyAdCap;
-                            final progress = (adsWatchedToday / _dailyAdCap)
-                                .clamp(0.0, 1.0);
 
-                            return InkWell(
-                              borderRadius:
-                                  BorderRadius.circular(AppSpacing.radius),
-                              onTap: capReached ||
-                                      _isAdLoading ||
-                                      !_adService.isAdReady
-                                  ? null
-                                  : _watchAd,
-                              child: Container(
-                                padding: const EdgeInsets.all(AppSpacing.lg),
-                                decoration: BoxDecoration(
-                                  color: AppColors.white,
-                                  borderRadius:
-                                      BorderRadius.circular(AppSpacing.radius),
-                                  border:
-                                      Border.all(color: AppColors.gray200),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(
-                                            color: capReached
-                                                ? AppColors.gray100
-                                                : AppColors.lightEmerald,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          child: Icon(
-                                            Icons.play_circle_outline,
-                                            color: capReached
-                                                ? AppColors.gray400
-                                                : AppColors.emerald,
-                                          ),
-                                        ),
-                                        const SizedBox(width: AppSpacing.md),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text('Watch Ad & Earn',
-                                                  style: AppTextStyles
-                                                      .h3CardTitle),
-                                              Text(
-                                                capReached
-                                                    ? 'Daily limit reached'
-                                                    : _isAdLoading
-                                                        ? 'Loading ad...'
-                                                        : _adService.isAdReady
-                                                            ? 'Test ad ready'
-                                                            : 'Ad not available',
-                                                style: AppTextStyles.caption,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (_isAdLoading && !capReached)
-                                          const SizedBox(
-                                            height: 20,
-                                            width: 20,
-                                            child: CircularProgressIndicator(
-                                                strokeWidth: 2),
-                                          )
-                                        else if (!capReached)
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.amberLight,
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            child: const Text('TEST',
-                                                style: TextStyle(
-                                                    color: AppColors.gold,
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: AppSpacing.md),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('Daily Ads Limit',
-                                            style: AppTextStyles.caption),
-                                        Text(
-                                            '$adsWatchedToday / $_dailyAdCap Watched',
-                                            style: AppTextStyles.caption),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: LinearProgressIndicator(
-                                        value: progress,
-                                        minHeight: 6,
-                                        backgroundColor: AppColors.gray200,
-                                        valueColor: AlwaysStoppedAnimation(
-                                          capReached
-                                              ? AppColors.errorRed
-                                              : AppColors.emerald,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            int adsWatchedToday = 0;
+                            DateTime? lastAd;
+                            for (final tx in allTx) {
+                              if (tx.type != TransactionType.adWatched ||
+                                  tx.timestamp == null) {
+                                continue;
+                              }
+                              final t = tx.timestamp!;
+                              if (t.isAfter(todayStart)) adsWatchedToday++;
+                              if (lastAd == null || t.isAfter(lastAd)) {
+                                lastAd = t;
+                              }
+                            }
+                            final opt = _optimisticLastAd;
+                            if (opt != null &&
+                                (lastAd == null || opt.isAfter(lastAd))) {
+                              lastAd = opt;
+                            }
+
+                            return _WatchAdCard(
+                              watchedToday: adsWatchedToday,
+                              dailyCap: _dailyAdCap,
+                              gapSeconds: _adGapSeconds,
+                              lastAdTime: lastAd,
+                              isLoading: _isAdLoading,
+                              isReady: _adService.isAdReady,
+                              onWatch: _watchAd,
+                              onRetry: _loadAd,
                             );
                           },
                         ),
@@ -485,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   children: [
                                     Text('Refer & Earn',
                                         style: AppTextStyles.h3CardTitle),
-                                    Text('Earn ₹5 per friend who joins',
+                                    Text('Earn ₹$_referralBonus per friend who reaches $_referralPoints points',
                                         style: AppTextStyles.caption),
                                   ],
                                 ),
@@ -497,24 +433,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
-                    
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Earn More Tasks',
                               style: AppTextStyles.h2SectionHeader),
                           TextButton(
-                            onPressed: () => context.go('/tasks'),
+                            onPressed: () => context.push('/earn-more'),
                             child: const Text('View All'),
                           ),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      
 
                       // Live tasks from Firestore (first 3)
                       StreamBuilder<List<AppTask>>(
-                        stream: _firestoreService.streamActiveTasks(),
+                        stream: _taskStream ??= _firestoreService.streamActiveTasks(),
                         builder: (context, taskSnapshot) {
                           if (taskSnapshot.connectionState ==
                                   ConnectionState.waiting &&
@@ -532,7 +466,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (tasks.isEmpty) {
                             return _buildEmptyTasks();
                           }
-                          
 
                           return Column(
                             children: tasks.map(_buildTaskCard).toList(),
@@ -544,8 +477,179 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 0), 
-      
+      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
+    );
+  }
+}
+
+/// The "Watch Ad & Earn" card. It owns its own 1-second timer, so only this
+/// card rebuilds while the cooldown counts down, not the whole Home page.
+class _WatchAdCard extends StatefulWidget {
+  final int watchedToday;
+  final int dailyCap;
+  final int gapSeconds;
+  final DateTime? lastAdTime;
+  final bool isLoading;
+  final bool isReady;
+  final VoidCallback onWatch;
+  final VoidCallback onRetry;
+
+  const _WatchAdCard({
+    required this.watchedToday,
+    required this.dailyCap,
+    required this.gapSeconds,
+    required this.lastAdTime,
+    required this.isLoading,
+    required this.isReady,
+    required this.onWatch,
+    required this.onRetry,
+  });
+
+  @override
+  State<_WatchAdCard> createState() => _WatchAdCardState();
+}
+
+class _WatchAdCardState extends State<_WatchAdCard> {
+  Timer? _timer;
+  int _shown = 0;
+
+  int _left() {
+    final last = widget.lastAdTime;
+    if (last == null) return 0;
+    final left =
+        widget.gapSeconds - DateTime.now().difference(last).inSeconds;
+    return left > 0 ? left : 0;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _shown = _left();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final l = _left();
+      if (l != _shown && mounted) setState(() => _shown = l);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final capReached = widget.watchedToday >= widget.dailyCap;
+    final left = _left();
+    final progress =
+        (widget.watchedToday / widget.dailyCap).clamp(0.0, 1.0);
+
+    String status;
+    String label;
+    IconData icon;
+    VoidCallback? action;
+
+    if (capReached) {
+      status = 'Daily limit reached';
+      label = 'Daily limit reached';
+      icon = Icons.block;
+      action = null;
+    } else if (left > 0) {
+      status = 'Next ad in ${left}s';
+      label = 'Next ad in ${left}s';
+      icon = Icons.timer_outlined;
+      action = null;
+    } else if (widget.isLoading) {
+      status = 'Loading ad...';
+      label = 'Loading ad...';
+      icon = Icons.hourglass_empty;
+      action = null;
+    } else if (widget.isReady) {
+      status = 'Ad ready';
+      label = 'Watch Ad & Earn';
+      icon = Icons.play_circle_outline;
+      action = widget.onWatch;
+    } else {
+      status = 'Ad not available';
+      label = 'Retry loading ad';
+      icon = Icons.refresh;
+      action = widget.onRetry;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.radius),
+        border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color:
+                      capReached ? AppColors.gray100 : AppColors.lightEmerald,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.play_circle_outline,
+                  color: capReached ? AppColors.gray400 : AppColors.emerald,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Watch Ad & Earn', style: AppTextStyles.h3CardTitle),
+                    Text(status, style: AppTextStyles.caption),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Daily Ads Limit', style: AppTextStyles.caption),
+              Text('${widget.watchedToday} / ${widget.dailyCap} Watched',
+                  style: AppTextStyles.caption),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: AppColors.gray200,
+              valueColor: AlwaysStoppedAnimation(
+                capReached ? AppColors.errorRed : AppColors.emerald,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: action,
+              icon: Icon(icon, size: 20),
+              label: Text(label),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 4,
+                shadowColor: AppColors.emerald.withValues(alpha: 0.45),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

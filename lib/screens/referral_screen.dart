@@ -23,6 +23,45 @@ class _ReferralScreenState extends State<ReferralScreen> {
   final _authService = AuthService();
   final _firestoreService = FirestoreService();
 
+  // Defaults, overridden by app_config/reward_config
+  int _bonus = 5;
+  int _points = 110;
+
+  Stream<AppUser?>? _userStream;
+  Stream<List<ReferralRecord>>? _refStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardConfig();
+  }
+
+  Future<void> _loadRewardConfig() async {
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('app_config')
+          .doc('reward_config')
+          .get();
+      final d = snap.data();
+      if (d == null || !mounted) return;
+      final bonus = (d['referralBonusAmount'] as num?)?.toInt();
+      final points = (d['referralUnlockPoints'] as num?)?.toInt();
+      setState(() {
+        if (bonus != null && bonus > 0) _bonus = bonus;
+        if (points != null && points > 0) _points = points;
+      });
+    } catch (_) {
+      // keep defaults
+    }
+  }
+
+  String _inviteMessage(String code) {
+    return '🎉 *Join Earnkit* — watch ads, complete tasks, and earn real rewards!\n\n'
+        'Use my referral code: "$code"\n\n'
+        'Join here: https://earnkit-backend.vercel.app/ref/$code\n\n'
+        'Sign up now and we both earn 🚀';
+  }
+
   Future<void> _ensureReferralCode(AppUser user, String uid) async {
     if (user.referralCode.isNotEmpty) return;
 
@@ -64,10 +103,11 @@ class _ReferralScreenState extends State<ReferralScreen> {
       body: uid == null
           ? const Center(child: Text('Not logged in'))
           : StreamBuilder<AppUser?>(
-              stream: _firestoreService.streamUserData(uid),
+              stream: _userStream ??= _firestoreService.streamUserData(uid),
               builder: (context, userSnapshot) {
                 if (userSnapshot.connectionState ==
-                    ConnectionState.waiting) {
+                        ConnectionState.waiting &&
+                    !userSnapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final user = userSnapshot.data;
@@ -80,6 +120,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
+                final refStream = _refStream ??=
+                    _firestoreService.streamReferralsByReferrer(uid);
+
                 return ListView(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   children: [
@@ -90,6 +133,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         borderRadius:
                             BorderRadius.circular(AppSpacing.radius),
                         border: Border.all(color: AppColors.gray200),
+                        boxShadow: AppShadows.soft,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +142,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                               style: AppTextStyles.h3CardTitle),
                           const SizedBox(height: 4),
                           Text(
-                            'Share this code — earn ₹5 when your friend completes their first activity.',
+                            'Share your link or code. You earn \u20B9$_bonus when your friend earns $_points points.',
                             style: AppTextStyles.caption,
                           ),
                           const SizedBox(height: AppSpacing.md),
@@ -137,12 +181,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                               Expanded(
                                 child: OutlinedButton.icon(
                                   onPressed: () {
-                                    final message =
-                                        '🎉 *Join Earnkit* — watch ads, complete tasks, and earn real rewards!\n\n'
-                                        'Use my referral code: "${user.referralCode}"\n\n'
-                                        'Sign up now and we both earn 🚀';
-                                    Clipboard.setData(
-                                        ClipboardData(text: message));
+                                    Clipboard.setData(ClipboardData(
+                                        text: _inviteMessage(
+                                            user.referralCode)));
                                     ScaffoldMessenger.of(context)
                                         .showSnackBar(const SnackBar(
                                             content: Text(
@@ -156,12 +197,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () {
-                                    final message =
-                                        '🎉 *Join Earnkit* — watch ads, complete tasks, and earn real rewards!\n\n'
-                                        'Use my referral code: "${user.referralCode}"\n\n'
-                                        'Sign up now and we both earn 🚀';
-                                    SharePlus.instance.share(
-                                        ShareParams(text: message));
+                                    SharePlus.instance.share(ShareParams(
+                                        text: _inviteMessage(
+                                            user.referralCode)));
                                   },
                                   icon: const Icon(Icons.share, size: 18),
                                   label: const Text('Share'),
@@ -174,8 +212,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     StreamBuilder<List<ReferralRecord>>(
-                      stream:
-                          _firestoreService.streamReferralsByReferrer(uid),
+                      stream: refStream,
                       builder: (context, refSnapshot) {
                         final referrals = refSnapshot.data ?? [];
                         final completedCount =
@@ -193,6 +230,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                       AppSpacing.radius),
                                   border:
                                       Border.all(color: AppColors.gray200),
+                                  boxShadow: AppShadows.soft,
                                 ),
                                 child: Column(
                                   crossAxisAlignment:
@@ -218,6 +256,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                       AppSpacing.radius),
                                   border:
                                       Border.all(color: AppColors.gray200),
+                                  boxShadow: AppShadows.soft,
                                 ),
                                 child: Column(
                                   crossAxisAlignment:
@@ -226,7 +265,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                     Text('Total Earned',
                                         style: AppTextStyles.caption),
                                     const SizedBox(height: 6),
-                                    Text('₹${completedCount * 5}',
+                                    Text('\u20B9${completedCount * _bonus}',
                                         style: AppTextStyles.h1ScreenTitle),
                                   ],
                                 ),
@@ -241,8 +280,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                         style: AppTextStyles.h2SectionHeader),
                     const SizedBox(height: AppSpacing.md),
                     StreamBuilder<List<ReferralRecord>>(
-                      stream:
-                          _firestoreService.streamReferralsByReferrer(uid),
+                      stream: refStream,
                       builder: (context, refSnapshot) {
                         final referrals = refSnapshot.data ?? [];
 
@@ -272,6 +310,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                     AppSpacing.radius),
                                 border:
                                     Border.all(color: AppColors.gray200),
+                                boxShadow: AppShadows.soft,
                               ),
                               child: Row(
                                 children: [
@@ -292,7 +331,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                                 AppTextStyles.h3CardTitle),
                                         Text(
                                           ref.createdAt != null
-                                              ? 'Joined ${ref.createdAt!.day}/${ref.createdAt!.month}/${ref.createdAt!.year}'
+                                              ? 'Joined ${ref.createdAt!.day}/${ref.createdAt!.month}/${ref.createdAt!.year}${ref.completed ? '' : ' • needs $_points points'}'
                                               : 'Recently joined',
                                           style: AppTextStyles.caption,
                                         ),

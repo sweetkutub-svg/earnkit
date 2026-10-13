@@ -269,6 +269,7 @@ class _EarnMoreScreenState extends State<EarnMoreScreen>
                           borderRadius:
                               BorderRadius.circular(AppSpacing.radius),
                           border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,6 +384,7 @@ class _EarnMoreScreenState extends State<EarnMoreScreen>
               color: AppColors.white,
               borderRadius: BorderRadius.circular(AppSpacing.radius),
               border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
             ),
             child: Row(
               children: [

@@ -283,6 +283,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSpacing.radius),
         border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -158,6 +158,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               color: AppColors.gray100,
               borderRadius: BorderRadius.circular(AppSpacing.radius),
               border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
             ),
             child: _picked != null
                 ? ClipRRect(

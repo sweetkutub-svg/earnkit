@@ -33,3 +33,18 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 }
+
+class AppShadows {
+  static const List<BoxShadow> soft = [
+    BoxShadow(
+      color: Color(0x14000000),
+      blurRadius: 14,
+      offset: Offset(0, 5),
+    ),
+    BoxShadow(
+      color: Color(0x0A000000),
+      blurRadius: 2,
+      offset: Offset(0, 1),
+    ),
+  ];
+}

@@ -62,6 +62,64 @@ class ProfileScreen extends StatelessWidget {
     if (context.mounted) context.go('/login');
   }
 
+  Future<void> _confirmDelete(
+      BuildContext context, AuthService authService) async {
+    final controller = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: const Text('Delete account?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                  'This permanently deletes your account, points and bonus. This cannot be undone.'),
+              const SizedBox(height: 12),
+              const Text('Type DELETE to confirm.'),
+              const SizedBox(height: 8),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                textCapitalization: TextCapitalization.characters,
+                onChanged: (_) => setState(() {}),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: controller.text.trim() == 'DELETE'
+                  ? () => Navigator.of(ctx).pop(true)
+                  : null,
+              child: const Text('Delete',
+                  style: TextStyle(color: AppColors.errorRed)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    final error = await authService.deleteAccount();
+    if (!context.mounted) return;
+    Navigator.of(context, rootNavigator: true).pop(); // close loader
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
+    context.go('/login');
+  }
+
   String _initials(String name) {
     final parts =
         name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
@@ -90,6 +148,7 @@ class ProfileScreen extends StatelessWidget {
             color: AppColors.white,
             borderRadius: BorderRadius.circular(AppSpacing.radius),
             border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
           ),
           child: Column(children: children),
         ),
@@ -196,6 +255,7 @@ class ProfileScreen extends StatelessWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSpacing.radius),
         border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
       ),
       child: Column(
         children: [
@@ -283,6 +343,8 @@ class ProfileScreen extends StatelessWidget {
                           () => _contactSupport(context)),
                       _tile(Icons.description_outlined, 'Terms & Privacy',
                           () => _showLegalSheet(context)),
+                      _tile(Icons.delete_outline, 'Delete Account',
+                          () => _confirmDelete(context, authService)),
                     ]),
                     const SizedBox(height: AppSpacing.xl),
                     SizedBox(

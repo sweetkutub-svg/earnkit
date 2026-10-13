@@ -5,7 +5,7 @@ import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/verify_email_screen.dart';
 import 'screens/terms_screen.dart';
-import 'screens/privacy_policy_screen.dart';
+import 'screens/legal_screen.dart';
 import 'screens/referral_screen.dart';
 import 'screens/post_signup_referral_screen.dart';
 import 'screens/earn_more_screen.dart';
@@ -15,11 +15,23 @@ import 'screens/home_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/withdraw_screen.dart';
 import 'screens/profile_screen.dart';
+import 'services/referral_link_service.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+
+    // Deep link: https://earnkit-backend.vercel.app/ref/CODE
+    GoRoute(
+      path: '/ref/:code',
+      redirect: (context, state) async {
+        final code = state.pathParameters['code'] ?? '';
+        await ReferralLinkService.savePending(code);
+        return '/';
+      },
+    ),
+
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
@@ -33,7 +45,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
     GoRoute(
       path: '/privacy',
-      builder: (context, state) => const PrivacyPolicyScreen(),
+      builder: (context, state) => const LegalScreen(
+        title: 'Privacy Policy',
+        field: 'privacyPolicy',
+      ),
     ),
     GoRoute(
       path: '/referral',
@@ -52,8 +67,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) =>
           TaskDetailScreen(task: state.extra as AppTask),
     ),
-
-    GoRoute(path: '/tasks', builder: (context, state) => const EarnMoreScreen()), GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+    GoRoute(
+      path: '/tasks',
+      builder: (context, state) => const EarnMoreScreen(),
+    ),
+    GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
     GoRoute(path: '/wallet', builder: (context, state) => const WalletScreen()),
     GoRoute(
       path: '/withdraw',

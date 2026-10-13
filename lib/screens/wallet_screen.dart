@@ -80,6 +80,7 @@ class WalletScreen extends StatelessWidget {
                         borderRadius:
                             BorderRadius.circular(AppSpacing.radius),
                         border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,6 +108,7 @@ class WalletScreen extends StatelessWidget {
                               borderRadius:
                                   BorderRadius.circular(AppSpacing.radius),
                               border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,6 +171,7 @@ class WalletScreen extends StatelessWidget {
                               borderRadius:
                                   BorderRadius.circular(AppSpacing.radius),
                               border: Border.all(color: AppColors.gray200),
+boxShadow: AppShadows.soft,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:math';
+import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -40,43 +42,63 @@ class AuthService {
   }
 
   Future<String?> linkReferralCode(String rawCode) async {
-    final uid = currentUser?.uid;
-    if (uid == null) return 'Not logged in';
+    final user = currentUser;
+    if (user == null) return 'Not logged in';
 
     final code = rawCode.trim().toUpperCase();
     if (code.isEmpty) return null;
 
     try {
-      final userRef = _firestore.collection('users').doc(uid);
-      final userSnap = await userRef.get();
-      final alreadyUsed = userSnap.data()?['referralCodeUsed'] ?? '';
-      if (alreadyUsed.toString().isNotEmpty) {
-        return 'A referral code has already been applied to your account';
+      final token = await user.getIdToken();
+      final response = await http.post(
+        Uri.parse('https://earnkit-backend.vercel.app/api/link-referral'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'code': code}),
+      );
+      if (response.statusCode == 200) return null;
+      try {
+        final data = jsonDecode(response.body);
+        return (data['error'] ??
+                'Could not apply referral code. Please try again.')
+            .toString();
+      } catch (_) {
+        return 'Could not apply referral code. Please try again.';
       }
-
-      final codeSnap =
-          await _firestore.collection('referral_codes').doc(code).get();
-      if (!codeSnap.exists) {
-        return 'Invalid referral code';
-      }
-      final referrerUid = codeSnap.data()?['uid'];
-      if (referrerUid == null || referrerUid == uid) {
-        return 'You cannot use your own referral code';
-      }
-
-      await _firestore.collection('referrals').add({
-        'referrerUid': referrerUid,
-        'referredUid': uid,
-        'referralCode': code,
-        'completed': false,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      await userRef.update({'referralCodeUsed': code});
-
-      return null;
-    } catch (e) {
+    } catch (_) {
       return 'Could not apply referral code. Please try again.';
+    }
+  }
+
+  Future<String?> deleteAccount() async {
+    final user = currentUser;
+    if (user == null) return 'Not logged in';
+    try {
+      final token = await user.getIdToken(true);
+      final response = await http.post(
+        Uri.parse('https://earnkit-backend.vercel.app/api/delete-account'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        try {
+          await signOut();
+        } catch (_) {}
+        return null;
+      }
+      try {
+        final data = jsonDecode(response.body);
+        return (data['error'] ?? 'Could not delete account. Please try again.')
+            .toString();
+      } catch (_) {
+        return 'Could not delete account. Please try again.';
+      }
+    } catch (_) {
+      return 'Could not delete account. Please try again.';
     }
   }
 
