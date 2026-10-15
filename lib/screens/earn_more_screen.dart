@@ -5,7 +5,6 @@ import '../services/firestore_service.dart';
 import '../models/task_model.dart';
 import '../models/task_submission_model.dart';
 import '../widgets/app_bottom_nav.dart';
-import '../widgets/banner_ad_widget.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
@@ -17,22 +16,14 @@ class EarnMoreScreen extends StatefulWidget {
   State<EarnMoreScreen> createState() => _EarnMoreScreenState();
 }
 
-class _EarnMoreScreenState extends State<EarnMoreScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _EarnMoreScreenState extends State<EarnMoreScreen> {
   final _fs = FirestoreService();
   final _searchController = TextEditingController();
   String _query = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
+  bool _showSubs = false;
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -100,69 +91,199 @@ class _EarnMoreScreenState extends State<EarnMoreScreen>
     );
   }
 
+  // ---------- Pinned offerwall row ----------
+
+    Widget _offerTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    String? badge,
+  }) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppSpacing.radius),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(AppSpacing.radius),
+            border: Border.all(color: AppColors.gray200),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 69,
+                decoration: BoxDecoration(
+                  color: AppColors.lightEmerald,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: AppColors.emerald, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(title,
+                              style: AppTextStyles.h3CardTitle
+                                  .copyWith(fontSize: 14),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                        if (badge != null) ...[
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(
+                              color:
+                                  AppColors.warningAmber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text('Soon',
+                                style: TextStyle(
+                                    color: AppColors.warningAmber,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Text(subtitle,
+                        style: AppTextStyles.caption.copyWith(fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _offerRow() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _offerTile(
+              icon: Icons.download_for_offline_outlined,
+              title: 'App Offers',
+              subtitle: 'Install apps & earn more',
+              badge: 'Soon',
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('App offers are coming soon.')),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            _offerTile(
+              icon: Icons.poll_outlined,
+              title: 'Surveys',
+              subtitle: 'Rewards are estimates',
+              onTap: () => context.push('/surveys'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------- Build ----------
+
   @override
   Widget build(BuildContext context) {
     final uid = AuthService().currentUser?.uid;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tasks'),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.emerald,
-          indicatorColor: AppColors.emerald,
-          tabs: const [
-            Tab(text: 'Available Tasks'),
-            Tab(text: 'My Submissions'),
-          ],
-        ),
-      ),
+      appBar: AppBar(title: const Text('Tasks')),
       body: uid == null
           ? const Center(child: Text('Not logged in'))
-          : StreamBuilder<List<AppTask>>(
-              stream: _fs.streamActiveTasks(),
-              builder: (context, tSnap) {
-                if (tSnap.hasError) {
-                  return Center(child: Text('Error: ${tSnap.error}'));
-                }
-                if (!tSnap.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final tasks = [...tSnap.data!]..sort((a, b) {
-                    final ca = a.code == 0 ? 1 << 30 : a.code;
-                    final cb = b.code == 0 ? 1 << 30 : b.code;
-                    return ca.compareTo(cb);
-                  });
-
-                return StreamBuilder<List<TaskSubmission>>(
-                  stream: _fs.streamMySubmissions(uid),
-                  builder: (context, sSnap) {
-                    if (sSnap.hasError) {
-                      return Center(child: Text('Error: ${sSnap.error}'));
-                    }
-                    if (!sSnap.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    final subs = sSnap.data!;
-
-                    return StreamBuilder<Map<String, int>>(
-                      stream: _fs.streamCompletedCounts(uid),
-                      builder: (context, cSnap) {
-                        final counts = cSnap.data ?? <String, int>{};
-                        return TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _availableTab(tasks, subs, counts),
-                            _submissionsTab(tasks, subs),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                );
-              },
+          : Column(
+              children: [
+                _offerRow(),
+                Expanded(child: _tasksArea(uid)),
+              ],
             ),
       bottomNavigationBar: const AppBottomNav(currentIndex: 2),
+    );
+  }
+
+  Widget _tasksArea(String uid) {
+    return StreamBuilder<List<AppTask>>(
+      stream: _fs.streamActiveTasks(),
+      builder: (context, tSnap) {
+        if (tSnap.hasError) {
+          return Center(child: Text('Error: ${tSnap.error}'));
+        }
+        if (!tSnap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final tasks = [...tSnap.data!]..sort((a, b) {
+            final ca = a.code == 0 ? 1 << 30 : a.code;
+            final cb = b.code == 0 ? 1 << 30 : b.code;
+            return ca.compareTo(cb);
+          });
+
+        return StreamBuilder<List<TaskSubmission>>(
+          stream: _fs.streamMySubmissions(uid),
+          builder: (context, sSnap) {
+            if (sSnap.hasError) {
+              return Center(child: Text('Error: ${sSnap.error}'));
+            }
+            if (!sSnap.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final subs = sSnap.data!;
+
+            return StreamBuilder<Map<String, int>>(
+              stream: _fs.streamCompletedCounts(uid),
+              builder: (context, cSnap) {
+                final counts = cSnap.data ?? <String, int>{};
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: SegmentedButton<bool>(
+                          showSelectedIcon: false,
+                          segments: const [
+                            ButtonSegment(
+                                value: false, label: Text('Verified Tasks')),
+                            ButtonSegment(
+                                value: true, label: Text('My Submissions')),
+                          ],
+                          selected: {_showSubs},
+                          onSelectionChanged: (s) =>
+                              setState(() => _showSubs = s.first),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _showSubs
+                          ? _submissionsTab(tasks, subs)
+                          : _availableTab(tasks, subs, counts),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -232,7 +353,8 @@ class _EarnMoreScreenState extends State<EarnMoreScreen>
   Widget _availableTab(
       List<AppTask> tasks, List<TaskSubmission> subs, Map<String, int> counts) {
     if (tasks.isEmpty) {
-      return _emptyState('No Tasks Available Yet', 'New tasks will appear here soon.');
+      return _emptyState(
+          'No Tasks Available Yet', 'New tasks will appear here soon.');
     }
 
     final byTask = {for (final s in subs) s.taskId: s};
@@ -246,17 +368,9 @@ class _EarnMoreScreenState extends State<EarnMoreScreen>
               ? _emptyState('No matching tasks', 'Try a different name or code.')
               : ListView.builder(
                   padding: const EdgeInsets.all(AppSpacing.lg),
-                  itemCount: shown.length + shown.length ~/ 3,
+                  itemCount: shown.length,
                   itemBuilder: (context, i) {
-                    // One banner after every 3rd task.
-                    if ((i + 1) % 4 == 0) {
-                      return const Padding(
-                        padding: EdgeInsets.only(
-                            top: AppSpacing.sm, bottom: AppSpacing.lg),
-                        child: Center(child: BannerAdWidget(labeled: true)),
-                      );
-                    }
-                    final task = shown[i - (i + 1) ~/ 4];
+                    final task = shown[i];
                     final sub = byTask[task.id];
                     final (chipColor, chipLabel) = _chipInfo(task, sub, counts);
                     return InkWell(
@@ -269,7 +383,6 @@ class _EarnMoreScreenState extends State<EarnMoreScreen>
                           borderRadius:
                               BorderRadius.circular(AppSpacing.radius),
                           border: Border.all(color: AppColors.gray200),
-boxShadow: AppShadows.soft,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,7 +497,6 @@ boxShadow: AppShadows.soft,
               color: AppColors.white,
               borderRadius: BorderRadius.circular(AppSpacing.radius),
               border: Border.all(color: AppColors.gray200),
-boxShadow: AppShadows.soft,
             ),
             child: Row(
               children: [

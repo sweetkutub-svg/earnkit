@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/user_model.dart';
+import '../widgets/unlock_progress.dart';
 import '../models/transaction_model.dart';
 import '../models/withdrawal_model.dart';
 import '../theme/app_colors.dart';
@@ -149,7 +150,7 @@ boxShadow: AppShadows.soft,
                                     const Icon(Icons.card_giftcard,
                                         size: 13, color: AppColors.gold),
                                     const SizedBox(width: 4),
-                                    Text('Bonus Ready',
+                                    Text('Bonus',
                                         style: AppTextStyles.caption
                                             .copyWith(color: AppColors.gold)),
                                   ],
@@ -197,6 +198,10 @@ boxShadow: AppShadows.soft,
                         ),
                       ],
                     ),
+                    if (user.lockedBonus > 0) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      UnlockProgress(adPoints: user.adPoints),
+                    ],
                     if (user.unlockedBonus > 0) ...[
                       const SizedBox(height: AppSpacing.sm),
                       Container(
@@ -324,7 +329,7 @@ boxShadow: AppShadows.soft,
                     const SizedBox(height: AppSpacing.md),
 
                     StreamBuilder<List<AppTransaction>>(
-                      stream: firestoreService.streamTransactions(uid),
+                      stream: firestoreService.streamRecentTransactions(uid),
                       builder: (context, txSnapshot) {
                         if (txSnapshot.connectionState ==
                             ConnectionState.waiting) {

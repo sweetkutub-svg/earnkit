@@ -37,6 +37,36 @@ class FirestoreService {
             .toList());
   }
 
+  // Last N transactions only (keeps reads small as history grows)
+  Stream<List<AppTransaction>> streamRecentTransactions(String uid,
+      {int limit = 50}) {
+    return _db
+        .collection('transactions')
+        .where('uid', isEqualTo: uid)
+        .orderBy('timestamp', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((doc) => AppTransaction.fromMap(doc.id, doc.data()))
+            .toList());
+  }
+
+  // Only today's ads (about 25 docs max): used for the daily limit and cooldown
+  Stream<List<AppTransaction>> streamTodayAds(String uid) {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day);
+    return _db
+        .collection('transactions')
+        .where('uid', isEqualTo: uid)
+        .where('type', isEqualTo: 'ad_watched')
+        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((doc) => AppTransaction.fromMap(doc.id, doc.data()))
+            .toList());
+  }
+
   // ---------- WITHDRAWALS ----------
 
   Future<void> createWithdrawalRequest({

@@ -212,6 +212,46 @@ boxShadow: AppShadows.soft,
     );
   }
 
+  Widget _buildSurveysCard() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppSpacing.radius),
+      onTap: () => context.push('/surveys'),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(AppSpacing.radius),
+          border: Border.all(color: AppColors.gray200),
+          boxShadow: AppShadows.soft,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.lightEmerald,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.poll_outlined, color: AppColors.emerald),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Surveys', style: AppTextStyles.h3CardTitle),
+                  Text('Complete surveys and earn bigger rewards',
+                      style: AppTextStyles.caption),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.emerald),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyTasks() {
     return InkWell(
       borderRadius: BorderRadius.circular(AppSpacing.radius),
@@ -334,6 +374,9 @@ boxShadow: AppShadows.soft,
                       ),
                       const SizedBox(height: AppSpacing.lg),
 
+                      _buildSurveysCard(),
+                      const SizedBox(height: AppSpacing.lg),
+
                       if (_isDeviceFlagged)
                         Container(
                           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -358,7 +401,7 @@ boxShadow: AppShadows.soft,
                         )
                       else
                         StreamBuilder<List<AppTransaction>>(
-                          stream: _txStream ??= _firestoreService.streamTransactions(uid),
+                          stream: _txStream ??= _firestoreService.streamTodayAds(uid),
                           builder: (context, txSnapshot) {
                             final allTx = txSnapshot.data ?? [];
                             final now = DateTime.now();

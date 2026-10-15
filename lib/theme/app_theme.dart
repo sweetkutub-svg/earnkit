@@ -17,20 +17,31 @@ class AppTheme {
         error: AppColors.errorRed,
         surface: AppColors.white,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.white,
         foregroundColor: AppColors.gray900,
         elevation: 0,
+        scrolledUnderElevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.12),
+        surfaceTintColor: Colors.transparent,
         centerTitle: false,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.emerald,
           foregroundColor: AppColors.white,
+          shadowColor: AppColors.emerald.withValues(alpha: 0.40),
+          surfaceTintColor: Colors.transparent,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radius),
           ),
+        ).copyWith(
+          elevation: WidgetStateProperty.resolveWith<double>((states) {
+            if (states.contains(WidgetState.disabled)) return 0;
+            if (states.contains(WidgetState.pressed)) return 1;
+            return 3;
+          }),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(

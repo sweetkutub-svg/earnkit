@@ -12,6 +12,7 @@ import 'screens/earn_more_screen.dart';
 import 'screens/task_detail_screen.dart';
 import 'models/task_model.dart';
 import 'screens/home_screen.dart';
+import 'screens/surveys_screen.dart';
 import 'screens/wallet_screen.dart';
 import 'screens/withdraw_screen.dart';
 import 'screens/profile_screen.dart';
@@ -70,6 +71,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/tasks',
       builder: (context, state) => const EarnMoreScreen(),
+    ),
+    GoRoute(
+      path: '/surveys',
+      builder: (context, state) => const SurveysScreen(),
     ),
     GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
     GoRoute(path: '/wallet', builder: (context, state) => const WalletScreen()),
