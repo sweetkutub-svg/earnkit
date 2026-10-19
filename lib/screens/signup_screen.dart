@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
-import '../theme/app_colors.dart';
+import '../theme/ui_colors.dart';
 import 'legal_screen.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -190,7 +190,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         TextSpan(
                           text: 'Terms',
                           style: TextStyle(
-                              color: AppColors.emerald,
+                              color: UiColors.sand,
                               fontWeight: FontWeight.w600,
                               decoration: TextDecoration.underline),
                           recognizer: TapGestureRecognizer()
@@ -205,7 +205,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         TextSpan(
                           text: 'Privacy Policy',
                           style: TextStyle(
-                              color: AppColors.emerald,
+                              color: UiColors.sand,
                               fontWeight: FontWeight.w600,
                               decoration: TextDecoration.underline),
                           recognizer: TapGestureRecognizer()

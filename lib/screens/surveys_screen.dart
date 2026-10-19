@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:webview_flutter/webview_flutter.dart';
-import '../theme/app_colors.dart';
+import '../theme/ui_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
@@ -133,7 +133,7 @@ class _SurveysScreenState extends State<SurveysScreen> {
           children: [
             Container(
               width: double.infinity,
-              color: AppColors.lightEmerald,
+              color: UiColors.mint,
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
               child: Text(

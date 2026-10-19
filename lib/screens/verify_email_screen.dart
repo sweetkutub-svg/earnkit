@@ -2,9 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_spacing.dart';
+import '../theme/ui_colors.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({super.key});
@@ -65,7 +63,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
       SnackBar(
         content:
             Text(error == null ? 'Verification email sent again!' : error),
-        backgroundColor: error == null ? AppColors.emerald : AppColors.errorRed,
+        backgroundColor: error == null ? UiColors.sand : UiColors.danger,
       ),
     );
   }
@@ -75,9 +73,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     final email = _authService.currentUser?.email ?? '';
 
     return Scaffold(
+      backgroundColor: UiColors.bg,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
+          padding: const EdgeInsets.all(28),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -85,8 +84,15 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
+                  color: UiColors.sand,
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: UiColors.sand.withValues(alpha: 0.45),
+                      blurRadius: 24,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
                 ),
                 child: const Icon(
                   Icons.mark_email_unread_outlined,
@@ -94,32 +100,41 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xxl),
-              Text(
+              const SizedBox(height: 32),
+              const Text(
                 'Check your inbox',
-                style: AppTextStyles.h1ScreenTitle,
+                style: TextStyle(
+                    fontSize: 28,
+                    color: UiColors.ink,
+                    fontWeight: FontWeight.w800),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
+              const SizedBox(height: 12),
+              const Text(
                 'We sent a verification link to',
-                style: AppTextStyles.bodyText,
+                style: TextStyle(
+                    fontSize: 14,
+                    color: UiColors.muted,
+                    fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               Text(
                 email,
-                style: AppTextStyles.h3CardTitle
-                    .copyWith(color: AppColors.emerald),
+                style: const TextStyle(
+                    fontSize: 15,
+                    color: UiColors.sand,
+                    fontWeight: FontWeight.w800),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 18),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.lightEmerald,
+                  color: UiColors.mint,
                   borderRadius: BorderRadius.circular(20),
+                  boxShadow: UiShadows.card,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -130,22 +145,24 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
                         width: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: AppColors.emerald,
+                          color: UiColors.ink,
                         ),
                       )
                     else
                       const Icon(Icons.autorenew,
-                          size: 14, color: AppColors.emerald),
+                          size: 14, color: UiColors.ink),
                     const SizedBox(width: 8),
-                    Text(
+                    const Text(
                       'Waiting for verification...',
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.emerald),
+                      style: TextStyle(
+                          fontSize: 12.5,
+                          color: UiColors.ink,
+                          fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.xxl),
+              const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -160,20 +177,19 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
                       : const Text('Resend Email'),
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: 10),
               TextButton(
                 onPressed: _isChecking ? null : _checkVerified,
                 child: const Text("I've verified — Check Now"),
               ),
-              const SizedBox(height: AppSpacing.sm),
               TextButton(
                 onPressed: () async {
                   await _authService.signOut();
                   if (context.mounted) context.go('/login');
                 },
-                child: Text(
+                child: const Text(
                   'Back to Login',
-                  style: TextStyle(color: AppColors.gray600),
+                  style: TextStyle(color: UiColors.muted),
                 ),
               ),
             ],

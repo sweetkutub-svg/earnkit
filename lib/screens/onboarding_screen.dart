@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 import '../theme/app_colors.dart';
+import '../theme/ui_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
@@ -204,7 +205,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: Text(
                             'Skip',
                             style: AppTextStyles.bodyText
-                                .copyWith(color: AppColors.gray600),
+                                .copyWith(color: UiColors.muted),
                           ),
                         ),
                 ),
@@ -268,8 +269,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     height: 8,
                     decoration: BoxDecoration(
                       color: _currentPage == index
-                          ? AppColors.emerald
-                          : AppColors.gray200,
+                          ? UiColors.sand
+                          : UiColors.disabled,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -366,7 +367,8 @@ class _SlideMediaState extends State<_SlideMedia> {
       width: widget.size,
       height: widget.size,
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        color: UiColors.sand,
+        boxShadow: UiShadows.card,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Icon(widget.slide.icon,

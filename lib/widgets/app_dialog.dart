@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
+import '../theme/ui_colors.dart';
 
 class AppDialog {
   static void show(
@@ -8,7 +7,7 @@ class AppDialog {
     required String title,
     required String message,
     IconData icon = Icons.info_outline,
-    Color iconColor = AppColors.emerald,
+    Color iconColor = UiColors.sand,
     String buttonText = 'OK',
   }) {
     showDialog(
@@ -17,55 +16,50 @@ class AppDialog {
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
           child: Container(
-            padding: const EdgeInsets.all(AppSpacing.xl),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
             decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: UiShadows.card,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: 64,
+                  height: 64,
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.12),
+                    color: iconColor.withValues(alpha: 0.14),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, size: 30, color: iconColor),
+                  child: Icon(icon, size: 32, color: iconColor),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: 18),
                 Text(
                   title,
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
+                      fontSize: 20,
+                      color: UiColors.ink,
+                      fontWeight: FontWeight.w800),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: 8),
                 Text(
                   message,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                      color: AppColors.gray600, fontSize: 14, height: 1.4),
+                      color: UiColors.muted,
+                      fontSize: 14,
+                      height: 1.45,
+                      fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: 22),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSpacing.radius),
-                      ),
-                    ),
                     child: Text(buttonText),
                   ),
                 ),
@@ -83,7 +77,7 @@ class AppDialog {
       title: 'Success',
       message: message,
       icon: Icons.check_circle_outline,
-      iconColor: AppColors.successGreen,
+      iconColor: const Color(0xFF2E9E6B),
     );
   }
 
@@ -93,7 +87,7 @@ class AppDialog {
       title: 'Oops',
       message: message,
       icon: Icons.error_outline,
-      iconColor: AppColors.errorRed,
+      iconColor: UiColors.danger,
     );
   }
 }

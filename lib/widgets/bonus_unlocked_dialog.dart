@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
+import '../theme/ui_colors.dart';
 
 class BonusUnlockedDialog {
   static void show(BuildContext context, int amount) {
@@ -10,68 +9,75 @@ class BonusUnlockedDialog {
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
           child: Container(
-            padding: const EdgeInsets.all(AppSpacing.xl),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
             decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.gold, width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: UiShadows.card,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 72,
-                  height: 72,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.gold, AppColors.warningAmber],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: UiColors.sand,
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: UiColors.sand.withValues(alpha: 0.45),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.star, size: 36, color: Colors.white),
+                  child: const Icon(Icons.star_rounded,
+                      size: 42, color: Colors.white),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: 18),
                 const Text(
                   '🎉 Bonus Unlocked!',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 21,
+                      color: UiColors.ink,
+                      fontWeight: FontWeight.w800),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  '$amount Earnkit Points',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.emerald,
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: UiColors.mint,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Text(
+                    '$amount Earnkit Points',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: UiColors.ink,
+                    ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: 12),
                 const Text(
                   'Your locked signup bonus has been added to your available balance!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.gray600, fontSize: 14),
+                  style: TextStyle(
+                      color: UiColors.muted,
+                      fontSize: 14,
+                      height: 1.45,
+                      fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: 22),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppSpacing.radius),
-                      ),
-                    ),
                     child: const Text('Awesome!'),
                   ),
                 ),

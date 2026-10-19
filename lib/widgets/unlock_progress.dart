@@ -1,11 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_spacing.dart';
+import '../theme/ui_colors.dart';
 
-/// Shows how many ad points are still needed to unlock the signup bonus.
-/// Threshold comes from app_config/reward_config (read once).
+/// Shows progress towards unlocking the signup bonus.
+/// Only points earned from ads count.
 class UnlockProgress extends StatefulWidget {
   final int adPoints;
   const UnlockProgress({super.key, required this.adPoints});
@@ -15,15 +13,16 @@ class UnlockProgress extends StatefulWidget {
 }
 
 class _UnlockProgressState extends State<UnlockProgress> {
+  static const _green = Color(0xFF2E9E6B);
   int _threshold = 450;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadThreshold();
   }
 
-  Future<void> _load() async {
+  Future<void> _loadThreshold() async {
     try {
       final snap = await FirebaseFirestore.instance
           .collection('app_config')
@@ -38,41 +37,68 @@ class _UnlockProgressState extends State<UnlockProgress> {
 
   @override
   Widget build(BuildContext context) {
-    final done = widget.adPoints.clamp(0, _threshold);
     final reached = widget.adPoints >= _threshold;
-    final color = reached ? AppColors.successGreen : AppColors.errorRed;
+    final color = reached ? _green : UiColors.danger;
+    final progress = (widget.adPoints / _threshold).clamp(0.0, 1.0).toDouble();
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.radius),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: UiShadows.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            reached
-                ? 'Bonus unlocked: $done / $_threshold'
-                : 'Watch ads to unlock your bonus: $done / $_threshold',
-            style: AppTextStyles.caption
-                .copyWith(color: color, fontWeight: FontWeight.w600),
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  reached ? Icons.lock_open_rounded : Icons.lock_outline,
+                  size: 19,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  reached
+                      ? 'Bonus unlocked: ${widget.adPoints} / $_threshold'
+                      : 'Watch ads to unlock your bonus: ${widget.adPoints} / $_threshold',
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: color,
+                      fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: _threshold == 0 ? 1 : done / _threshold,
-              minHeight: 8,
-              backgroundColor: color.withValues(alpha: 0.15),
-              color: color,
+              value: progress,
+              minHeight: 9,
+              backgroundColor: UiColors.bg,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
-          const SizedBox(height: 6),
-          Text('Only points from watching ads count. Surveys and tasks do not.',
-              style: AppTextStyles.caption),
+          const SizedBox(height: 8),
+          const Text(
+            'Only points from watching ads count. Surveys and tasks do not.',
+            style: TextStyle(
+                fontSize: 12,
+                color: UiColors.muted,
+                fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

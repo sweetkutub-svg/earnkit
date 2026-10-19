@@ -5,9 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/user_model.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_spacing.dart';
+import '../theme/ui_colors.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'legal_screen.dart';
 
@@ -15,6 +13,8 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   static const _supportEmail = 'codewithkutub@gmail.com';
+  static const _green = Color(0xFF2E9E6B);
+  static const _amber = Color(0xFFD99A00);
 
   Future<void> _contactSupport(BuildContext context) async {
     final uri = Uri(
@@ -52,7 +52,7 @@ class ProfileScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Log out',
-                style: TextStyle(color: AppColors.errorRed)),
+                style: TextStyle(color: UiColors.danger)),
           ),
         ],
       ),
@@ -97,7 +97,7 @@ class ProfileScreen extends StatelessWidget {
                   ? () => Navigator.of(ctx).pop(true)
                   : null,
               child: const Text('Delete',
-                  style: TextStyle(color: AppColors.errorRed)),
+                  style: TextStyle(color: UiColors.danger)),
             ),
           ],
         ),
@@ -131,36 +131,55 @@ class ProfileScreen extends StatelessWidget {
   Widget _group(String title, List<Widget> tiles) {
     final children = <Widget>[];
     for (var i = 0; i < tiles.length; i++) {
-      if (i > 0) children.add(const Divider(height: 1));
+      if (i > 0) {
+        children.add(const Divider(height: 1, indent: 66, endIndent: 16));
+      }
       children.add(tiles[i]);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.sm),
+          padding: const EdgeInsets.only(left: 6, bottom: 10),
           child: Text(title,
-              style: AppTextStyles.caption
-                  .copyWith(fontWeight: FontWeight.w600)),
+              style: const TextStyle(
+                  fontSize: 13,
+                  color: UiColors.muted,
+                  fontWeight: FontWeight.w800)),
         ),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(AppSpacing.radius),
-            border: Border.all(color: AppColors.gray200),
-boxShadow: AppShadows.soft,
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: UiShadows.card,
           ),
-          child: Column(children: children),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Material(
+              color: Colors.white,
+              child: Column(children: children),
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _tile(IconData icon, String title, VoidCallback onTap) {
+  Widget _iconBubble(IconData icon, Color color) => Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: Icon(icon, size: 20, color: UiColors.ink),
+      );
+
+  Widget _tile(IconData icon, Color color, String title, VoidCallback onTap) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.emerald),
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      leading: _iconBubble(icon, color),
+      title: Text(title,
+          style: const TextStyle(
+              fontSize: 15, color: UiColors.ink, fontWeight: FontWeight.w700)),
+      trailing: const Icon(Icons.chevron_right, color: UiColors.muted),
       onTap: onTap,
     );
   }
@@ -169,38 +188,43 @@ boxShadow: AppShadows.soft,
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.privacy_tip_outlined,
-                  color: AppColors.emerald),
-              title: const Text('Privacy Policy'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const LegalScreen(
-                    title: 'Privacy Policy',
-                    field: 'privacyPolicy',
-                  ),
-                ));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.description_outlined,
-                  color: AppColors.emerald),
-              title: const Text('Terms of Service'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => const LegalScreen(
-                    title: 'Terms of Service',
-                    field: 'termsOfService',
-                  ),
-                ));
-              },
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 14, 8, 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading:
+                    _iconBubble(Icons.privacy_tip_outlined, UiColors.mint),
+                title: const Text('Privacy Policy',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const LegalScreen(
+                      title: 'Privacy Policy',
+                      field: 'privacyPolicy',
+                    ),
+                  ));
+                },
+              ),
+              ListTile(
+                leading:
+                    _iconBubble(Icons.description_outlined, UiColors.lilac),
+                title: const Text('Terms of Service',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const LegalScreen(
+                      title: 'Terms of Service',
+                      field: 'termsOfService',
+                    ),
+                  ));
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -214,13 +238,18 @@ boxShadow: AppShadows.soft,
         final data = snap.data?.data();
         final enabled = (data?['notificationsEnabled'] as bool?) ?? true;
         return ListTile(
-          leading: const Icon(Icons.notifications_outlined,
-              color: AppColors.emerald),
-          title: const Text('Notifications'),
-          subtitle: Text(enabled ? 'On' : 'Off', style: AppTextStyles.caption),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          leading: _iconBubble(Icons.notifications_outlined, UiColors.peach),
+          title: const Text('Notifications',
+              style: TextStyle(
+                  fontSize: 15,
+                  color: UiColors.ink,
+                  fontWeight: FontWeight.w700)),
+          subtitle: Text(enabled ? 'On' : 'Off',
+              style: const TextStyle(fontSize: 12, color: UiColors.muted)),
           trailing: Switch(
             value: enabled,
-            activeThumbColor: AppColors.emerald,
             onChanged: snap.hasData
                 ? (value) async {
                     try {
@@ -247,39 +276,58 @@ boxShadow: AppShadows.soft,
   Widget _headerCard(AppUser? appUser, AuthService authService) {
     final name = (appUser?.name ?? '').trim();
     final verified = authService.isEmailVerified;
+    final chipColor = verified ? _green : _amber;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.radius),
-        border: Border.all(color: AppColors.gray200),
-boxShadow: AppShadows.soft,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: UiShadows.card,
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 34,
-            backgroundColor: AppColors.emerald,
+          Container(
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              color: UiColors.sand,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: UiColors.sand.withValues(alpha: 0.4),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
             child: Text(
               _initials(name),
               style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold),
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: 14),
           Text(name.isEmpty ? 'Earnkit User' : name,
-              style: AppTextStyles.h2SectionHeader),
+              style: const TextStyle(
+                  fontSize: 20,
+                  color: UiColors.ink,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 2),
-          Text(appUser?.email ?? '', style: AppTextStyles.caption),
-          const SizedBox(height: AppSpacing.sm),
+          Text(appUser?.email ?? '',
+              style: const TextStyle(
+                  fontSize: 13,
+                  color: UiColors.muted,
+                  fontWeight: FontWeight.w500)),
+          const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: verified ? AppColors.lightEmerald : AppColors.amberLight,
+              color: chipColor.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -287,15 +335,15 @@ boxShadow: AppShadows.soft,
               children: [
                 Icon(
                   verified ? Icons.verified : Icons.error_outline,
-                  size: 14,
-                  color: verified ? AppColors.emerald : AppColors.gold,
+                  size: 15,
+                  color: chipColor,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 5),
                 Text(
                   verified ? 'Email Verified' : 'Email Not Verified',
                   style: TextStyle(
-                    color: verified ? AppColors.emerald : AppColors.gold,
-                    fontWeight: FontWeight.w600,
+                    color: chipColor,
+                    fontWeight: FontWeight.w800,
                     fontSize: 12,
                   ),
                 ),
@@ -314,59 +362,89 @@ boxShadow: AppShadows.soft,
     final uid = authService.currentUser?.uid;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
-      body: uid == null
-          ? const Center(child: Text('Not logged in'))
-          : StreamBuilder<AppUser?>(
-              stream: firestoreService.streamUserData(uid),
-              builder: (context, snapshot) {
-                final appUser = snapshot.data;
+      backgroundColor: UiColors.bg,
+      body: SafeArea(
+        bottom: false,
+        child: uid == null
+            ? const Center(child: Text('Not logged in'))
+            : StreamBuilder<AppUser?>(
+                stream: firestoreService.streamUserData(uid),
+                builder: (context, snapshot) {
+                  final appUser = snapshot.data;
 
-                return ListView(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  children: [
-                    _headerCard(appUser, authService),
-                    const SizedBox(height: AppSpacing.lg),
-                    _group('Account', [
-                      _tile(Icons.history, 'Withdrawal History',
-                          () => context.push('/wallet')),
-                      _tile(Icons.people_outline, 'Refer & Earn',
-                          () => context.push('/referral')),
-                    ]),
-                    const SizedBox(height: AppSpacing.lg),
-                    _group('Preferences', [
-                      _notificationTile(uid),
-                    ]),
-                    const SizedBox(height: AppSpacing.lg),
-                    _group('Support', [
-                      _tile(Icons.help_outline, 'Help & Support',
-                          () => _contactSupport(context)),
-                      _tile(Icons.description_outlined, 'Terms & Privacy',
-                          () => _showLegalSheet(context)),
-                      _tile(Icons.delete_outline, 'Delete Account',
-                          () => _confirmDelete(context, authService)),
-                    ]),
-                    const SizedBox(height: AppSpacing.xl),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.errorRed,
+                  return ListView(
+                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
+                    children: [
+                      const Text('Profile',
+                          style: TextStyle(
+                              fontSize: 30,
+                              color: UiColors.ink,
+                              fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 16),
+                      _headerCard(appUser, authService),
+                      const SizedBox(height: 22),
+                      _group('Account', [
+                        _tile(Icons.history, UiColors.lilac,
+                            'Withdrawal History', () => context.push('/wallet')),
+                        _tile(Icons.people_outline, UiColors.mint,
+                            'Refer & Earn', () => context.push('/referral')),
+                      ]),
+                      const SizedBox(height: 20),
+                      _group('Preferences', [
+                        _notificationTile(uid),
+                      ]),
+                      const SizedBox(height: 20),
+                      _group('Support', [
+                        _tile(Icons.help_outline, UiColors.peach,
+                            'Help & Support', () => _contactSupport(context)),
+                        _tile(Icons.description_outlined, UiColors.lilac,
+                            'Terms & Privacy', () => _showLegalSheet(context)),
+                        _tile(
+                            Icons.delete_outline,
+                            UiColors.danger.withValues(alpha: 0.2),
+                            'Delete Account',
+                            () => _confirmDelete(context, authService)),
+                      ]),
+                      const SizedBox(height: 26),
+                      Material(
+                        color: UiColors.danger,
+                        borderRadius: BorderRadius.circular(40),
+                        elevation: 5,
+                        shadowColor: Colors.black.withValues(alpha: 0.3),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(40),
+                          onTap: () => _confirmLogout(context, authService),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.logout,
+                                    color: Colors.white, size: 20),
+                                SizedBox(width: 8),
+                                Text('Logout Account',
+                                    style: TextStyle(
+                                        fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800)),
+                              ],
+                            ),
+                          ),
                         ),
-                        onPressed: () => _confirmLogout(context, authService),
-                        icon: const Icon(Icons.logout),
-                        label: const Text('Logout Account'),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Center(
-                      child: Text('App Version 1.0.0',
-                          style: AppTextStyles.caption),
-                    ),
-                  ],
-                );
-              },
-            ),
+                      const SizedBox(height: 14),
+                      const Center(
+                        child: Text('App Version 1.0.0',
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: UiColors.muted,
+                                fontWeight: FontWeight.w500)),
+                      ),
+                    ],
+                  );
+                },
+              ),
+      ),
       bottomNavigationBar: const AppBottomNav(currentIndex: 4),
     );
   }

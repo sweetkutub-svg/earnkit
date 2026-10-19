@@ -8,10 +8,7 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/cloudinary_service.dart';
 import '../services/ad_service.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_spacing.dart';
-import '../widgets/banner_ad_widget.dart';
+import '../theme/ui_colors.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final AppTask task;
@@ -28,6 +25,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   File? _picked;
   bool _busy = false;
   static int _applyCount = 0;
+
+  static const _green = Color(0xFF2E9E6B);
 
   void _toast(String msg) {
     if (!mounted) return;
@@ -116,86 +115,93 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
+  // ---------- UI helpers ----------
+
   Widget _box({required Color color, required Widget child}) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(AppSpacing.lg),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(AppSpacing.radius),
-    ),
-    child: child,
-  );
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: UiShadows.card,
+        ),
+        child: child,
+      );
+
+  Widget _caption(String text) => Text(text,
+      style: const TextStyle(
+          fontSize: 12.5, color: UiColors.muted, fontWeight: FontWeight.w600));
+
+  Widget _boxTitle(String text) => Text(text,
+      style: const TextStyle(
+          fontSize: 14.5, color: UiColors.ink, fontWeight: FontWeight.w800));
+
+  Widget _spinner() => const SizedBox(
+        height: 20,
+        width: 20,
+        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+      );
 
   Widget _applyButton(String label) => SizedBox(
-    width: double.infinity,
-    child: ElevatedButton(
-      onPressed: _busy ? null : _apply,
-      child: _busy
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-          : Text(label),
-    ),
-  );
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _busy ? null : _apply,
+          child: _busy ? _spinner() : Text(label),
+        ),
+      );
 
   Widget _uploadSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Upload proof screenshot', style: AppTextStyles.h3CardTitle),
-        const SizedBox(height: AppSpacing.sm),
+        const Text('Upload proof screenshot',
+            style: TextStyle(
+                fontSize: 17, color: UiColors.ink, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 10),
         GestureDetector(
           onTap: _busy ? null : _pickImage,
           child: Container(
-            height: 160,
+            height: 170,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.gray100,
-              borderRadius: BorderRadius.circular(AppSpacing.radius),
-              border: Border.all(color: AppColors.gray200),
-boxShadow: AppShadows.soft,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: UiShadows.card,
             ),
             child: _picked != null
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(AppSpacing.radius),
+                    borderRadius: BorderRadius.circular(24),
                     child: Image.file(_picked!, fit: BoxFit.cover),
                   )
-                : const Center(
+                : Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.upload_file,
-                          color: AppColors.gray400,
-                          size: 32,
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: const BoxDecoration(
+                              color: UiColors.lilac, shape: BoxShape.circle),
+                          child: const Icon(Icons.upload_file,
+                              color: UiColors.ink, size: 26),
                         ),
-                        SizedBox(height: 8),
-                        Text('Tap to select screenshot'),
+                        const SizedBox(height: 10),
+                        const Text('Tap to select screenshot',
+                            style: TextStyle(
+                                fontSize: 13.5,
+                                color: UiColors.muted,
+                                fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: 14),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
             onPressed: _busy ? null : _submit,
-            child: _busy
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Watch Ad & Submit'),
+            child: _busy ? _spinner() : const Text('Watch Ad & Submit'),
           ),
         ),
       ],
@@ -213,19 +219,19 @@ boxShadow: AppShadows.soft,
         children: [
           if (st == SubmissionStatus.expired) ...[
             _box(
-              color: AppColors.gray100,
-              child: Text(
+              color: Colors.white,
+              child: const Text(
                 'Your previous attempt expired. Apply again to get a new deadline.',
-                style: AppTextStyles.bodyText,
+                style: TextStyle(
+                    fontSize: 13.5,
+                    color: UiColors.ink,
+                    fontWeight: FontWeight.w600),
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 14),
           ],
-          Text(
-            'Complete within ${task.durationHours} hours after applying.',
-            style: AppTextStyles.caption,
-          ),
-          const SizedBox(height: AppSpacing.sm),
+          _caption('Complete within ${task.durationHours} hours after applying.'),
+          const SizedBox(height: 10),
           _applyButton(
             st == SubmissionStatus.expired
                 ? 'Apply Again (+${task.rewardPoints})'
@@ -246,69 +252,71 @@ boxShadow: AppShadows.soft,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _box(
-            color: AppColors.lightEmerald,
+            color: UiColors.mint,
             child: Row(
               children: [
-                const Icon(Icons.check_circle, color: AppColors.emerald),
-                const SizedBox(width: AppSpacing.md),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                      color: Colors.white, shape: BoxShape.circle),
+                  child: const Icon(Icons.check_rounded, color: _green),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Approved — ${sub.rewardPoints} points credited',
-                        style: AppTextStyles.h3CardTitle,
-                      ),
+                      _boxTitle(
+                          'Approved — ${sub.rewardPoints} points credited'),
                       const SizedBox(height: 2),
-                      Text(progress, style: AppTextStyles.caption),
+                      _caption(progress),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: 14),
           if (canRepeat) ...[
-            Text(
-              'Complete within ${task.durationHours} hours after applying.',
-              style: AppTextStyles.caption,
-            ),
-            const SizedBox(height: AppSpacing.sm),
+            _caption(
+                'Complete within ${task.durationHours} hours after applying.'),
+            const SizedBox(height: 10),
             _applyButton('Do Again (+${task.rewardPoints})'),
           ] else
-            Text(
-              'You have reached the limit for this task.',
-              style: AppTextStyles.caption,
-            ),
+            _caption('You have reached the limit for this task.'),
         ],
       );
     }
 
     if (st == SubmissionStatus.pending) {
       return _box(
-        color: AppColors.gray100,
+        color: Colors.white,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.hourglass_empty, color: AppColors.gray600),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    'Submitted — verification pending',
-                    style: AppTextStyles.h3CardTitle,
-                  ),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                      color: UiColors.peach, shape: BoxShape.circle),
+                  child: const Icon(Icons.hourglass_empty,
+                      color: UiColors.ink, size: 20),
                 ),
+                const SizedBox(width: 12),
+                Expanded(child: _boxTitle('Submitted — verification pending')),
               ],
             ),
             if (sub.screenshotUrl.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: 14),
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
                 child: Image.network(
                   sub.screenshotUrl,
-                  height: 140,
+                  height: 150,
+                  width: double.infinity,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
@@ -325,44 +333,53 @@ boxShadow: AppShadows.soft,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _box(
-          color: AppColors.lightEmerald,
+          color: UiColors.lilac,
           child: Row(
             children: [
-              const Icon(Icons.timer_outlined, color: AppColors.emerald),
-              const SizedBox(width: AppSpacing.md),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                    color: Colors.white, shape: BoxShape.circle),
+                child: const Icon(Icons.timer_outlined,
+                    color: UiColors.ink, size: 20),
+              ),
+              const SizedBox(width: 12),
               Expanded(
-                child: Text(
+                child: _boxTitle(
                   st == SubmissionStatus.rejected
                       ? 'Rejected — resubmit • $left'
                       : 'Applied — upload proof • $left',
-                  style: AppTextStyles.h3CardTitle,
                 ),
               ),
             ],
           ),
         ),
         if (st == SubmissionStatus.rejected && sub.reviewNote.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: 12),
           _box(
-            color: AppColors.errorRed.withValues(alpha: 0.08),
+            color: Colors.white,
             child: Text(
               'Reason: ${sub.reviewNote}',
-              style: AppTextStyles.bodyText.copyWith(color: AppColors.errorRed),
+              style: const TextStyle(
+                  fontSize: 13.5,
+                  color: UiColors.danger,
+                  fontWeight: FontWeight.w700),
             ),
           ),
         ],
         if (task.url.trim().isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: _openLink,
-              icon: const Icon(Icons.open_in_new),
+              icon: const Icon(Icons.open_in_new, size: 18),
               label: const Text('Open Task Link'),
             ),
           ),
         ],
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: 20),
         _uploadSection(),
       ],
     );
@@ -374,75 +391,122 @@ boxShadow: AppShadows.soft,
     final uid = _auth.currentUser?.uid;
 
     return Scaffold(
-      appBar: AppBar(title: Text(task.title)),
+      backgroundColor: UiColors.bg,
+      appBar: AppBar(title: const Text('Task details')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.fromLTRB(18, 6, 18, 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (task.imageUrl.isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppSpacing.radius),
-                child: Image.network(
-                  task.imageUrl,
-                  width: double.infinity,
-                  height: 190,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: UiShadows.card,
                 ),
-              ),
-            const SizedBox(height: AppSpacing.md),
-            if (task.codeLabel.isNotEmpty)
-              Text(
-                '${task.codeLabel}  •  ${task.limitLabel}',
-                style: AppTextStyles.caption.copyWith(color: AppColors.emerald),
-              ),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(task.title, style: AppTextStyles.h2SectionHeader),
-                ),
-                Text(
-                  '+${task.rewardPoints}',
-                  style: AppTextStyles.h2SectionHeader.copyWith(
-                    color: AppColors.emerald,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.network(
+                    task.imageUrl,
+                    width: double.infinity,
+                    height: 190,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(task.description, style: AppTextStyles.bodyText),
-            const SizedBox(height: AppSpacing.md),
+              ),
+            if (task.imageUrl.isNotEmpty) const SizedBox(height: 16),
+
+            // Title card
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: AppColors.amberLight,
-                borderRadius: BorderRadius.circular(AppSpacing.radius),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: UiShadows.card,
               ),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: AppColors.gold,
-                    size: 18,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      task.note.isNotEmpty
-                          ? task.note
-                          : 'Complete the task and upload a screenshot as proof.',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.gold,
+                  if (task.codeLabel.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '${task.codeLabel}  •  ${task.limitLabel}',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: UiColors.sand,
+                            fontWeight: FontWeight.w800),
                       ),
+                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(task.title,
+                            style: const TextStyle(
+                                fontSize: 20,
+                                height: 1.2,
+                                color: UiColors.ink,
+                                fontWeight: FontWeight.w800)),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: UiColors.lilac,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text('+${task.rewardPoints}',
+                            style: const TextStyle(
+                                fontSize: 15,
+                                color: UiColors.ink,
+                                fontWeight: FontWeight.w800)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(task.description,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          height: 1.4,
+                          color: Color(0xFF55555A),
+                          fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: UiColors.peach,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline,
+                            color: UiColors.ink, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            task.note.isNotEmpty
+                                ? task.note
+                                : 'Complete the task and upload a screenshot as proof.',
+                            style: const TextStyle(
+                                fontSize: 12.5,
+                                color: UiColors.ink,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 18),
+
             if (uid == null)
               const Text('Not logged in')
             else
@@ -464,12 +528,6 @@ boxShadow: AppShadows.soft,
                   );
                 },
               ),
-            const Divider(
-              height: AppSpacing.xl,
-              thickness: 1,
-              color: AppColors.gray200,
-            ),
-            const Center(child: BannerAdWidget()),
           ],
         ),
       ),
