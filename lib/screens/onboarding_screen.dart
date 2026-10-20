@@ -3,10 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
-import '../theme/app_colors.dart';
 import '../theme/ui_colors.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_spacing.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -36,6 +33,12 @@ const List<IconData> _fallbackIcons = [
   Icons.groups_outlined,
   Icons.account_balance_wallet_outlined,
   Icons.stars_outlined,
+];
+
+const List<Color> _slideColors = [
+  UiColors.mint,
+  UiColors.lilac,
+  UiColors.peach,
 ];
 
 const List<_Slide> _defaultSlides = [
@@ -169,10 +172,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  Widget _skipPill() {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: _goToLogin,
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+          child: Text('Skip',
+              style: TextStyle(
+                  fontSize: 13.5,
+                  color: UiColors.muted,
+                  fontWeight: FontWeight.w800)),
+        ),
+      ),
+    );
+  }
+
+  Widget _dots() {
+    return Row(
+      children: List.generate(
+        _slides.length,
+        (index) => AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          margin: const EdgeInsets.only(right: 6),
+          width: _currentPage == index ? 28 : 9,
+          height: 9,
+          decoration: BoxDecoration(
+            color: _currentPage == index ? UiColors.sand : UiColors.disabled,
+            borderRadius: BorderRadius.circular(5),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
+        backgroundColor: UiColors.bg,
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -188,28 +231,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _previousPage();
       },
       child: Scaffold(
+        backgroundColor: UiColors.bg,
         body: SafeArea(
           child: Column(
             children: [
+              // Top bar
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
-                ),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: isLastPage
-                      ? const SizedBox(height: 40)
-                      : TextButton(
-                          onPressed: _goToLogin,
-                          child: Text(
-                            'Skip',
-                            style: AppTextStyles.bodyText
-                                .copyWith(color: UiColors.muted),
-                          ),
-                        ),
+                padding: const EdgeInsets.fromLTRB(22, 12, 22, 0),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text('Earnkit',
+                          style: TextStyle(
+                              fontSize: 24,
+                              color: UiColors.ink,
+                              fontWeight: FontWeight.w800)),
+                    ),
+                    if (isLastPage) const SizedBox(height: 38) else _skipPill(),
+                  ],
                 ),
               ),
+
+              // Slides
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
@@ -221,33 +264,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     final slide = _slides[index];
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final mediaSize =
-                            (constraints.maxHeight * 0.48).clamp(160.0, 300.0);
+                        final mediaHeight =
+                            (constraints.maxHeight * 0.52).clamp(190.0, 360.0);
                         return SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.xl),
+                          padding: const EdgeInsets.symmetric(horizontal: 22),
                           child: ConstrainedBox(
                             constraints: BoxConstraints(
                                 minHeight: constraints.maxHeight),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _SlideMedia(
                                   key: ValueKey('$index-${slide.mediaUrl}'),
                                   slide: slide,
-                                  size: mediaSize,
+                                  height: mediaHeight,
+                                  color: _slideColors[
+                                      index % _slideColors.length],
                                 ),
-                                const SizedBox(height: AppSpacing.xl),
+                                const SizedBox(height: 28),
                                 Text(
                                   slide.title,
-                                  textAlign: TextAlign.center,
-                                  style: AppTextStyles.h1ScreenTitle,
+                                  style: const TextStyle(
+                                      fontSize: 30,
+                                      height: 1.15,
+                                      color: UiColors.ink,
+                                      fontWeight: FontWeight.w800),
                                 ),
-                                const SizedBox(height: AppSpacing.md),
+                                const SizedBox(height: 12),
                                 Text(
                                   slide.description,
-                                  textAlign: TextAlign.center,
-                                  style: AppTextStyles.bodyText,
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      height: 1.5,
+                                      color: UiColors.muted,
+                                      fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
@@ -258,28 +309,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _slides.length,
-                  (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: _currentPage == index ? 24 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: _currentPage == index
-                          ? UiColors.sand
-                          : UiColors.disabled,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
+
+              // Bottom controls
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                padding: const EdgeInsets.fromLTRB(22, 8, 22, 24),
                 child: isLastPage
                     ? SizedBox(
                         width: double.infinity,
@@ -290,23 +323,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       )
                     : Row(
                         children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _goToLogin,
-                              child: const Text('Skip'),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _nextPage,
-                              child: const Text('Next'),
+                          Expanded(child: _dots()),
+                          Material(
+                            color: UiColors.sand,
+                            borderRadius: BorderRadius.circular(40),
+                            elevation: 5,
+                            shadowColor: Colors.black.withValues(alpha: 0.3),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(40),
+                              onTap: _nextPage,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 26, vertical: 15),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('Next',
+                                        style: TextStyle(
+                                            fontSize: 15,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w800)),
+                                    SizedBox(width: 8),
+                                    Icon(Icons.arrow_forward_rounded,
+                                        color: Colors.white, size: 20),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
               ),
-              const SizedBox(height: AppSpacing.xl),
             ],
           ),
         ),
@@ -315,13 +362,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-/// Shows the slide's image or a looping, muted, auto-playing video.
-/// While the media loads it shows a neutral box with a spinner; the icon box
-/// is only used when the slide has no media or the media fails to load.
+/// Shows the slide's image or a looping, muted, auto-playing video inside a
+/// rounded card. While the media loads it shows a neutral box with a spinner;
+/// the coloured icon card is only used when the slide has no media or the
+/// media fails to load.
 class _SlideMedia extends StatefulWidget {
   final _Slide slide;
-  final double size;
-  const _SlideMedia({super.key, required this.slide, required this.size});
+  final double height;
+  final Color color;
+  const _SlideMedia({
+    super.key,
+    required this.slide,
+    required this.height,
+    required this.color,
+  });
 
   @override
   State<_SlideMedia> createState() => _SlideMediaState();
@@ -362,28 +416,44 @@ class _SlideMediaState extends State<_SlideMedia> {
     super.dispose();
   }
 
-  Widget _iconBox() {
+  Widget _card({required Widget child, Color? color}) {
     return Container(
-      width: widget.size,
-      height: widget.size,
+      width: double.infinity,
+      height: widget.height,
       decoration: BoxDecoration(
-        color: UiColors.sand,
+        color: color ?? Colors.white,
+        borderRadius: BorderRadius.circular(32),
         boxShadow: UiShadows.card,
-        borderRadius: BorderRadius.circular(24),
       ),
-      child: Icon(widget.slide.icon,
-          size: widget.size * 0.4, color: AppColors.white),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _iconBox() {
+    final size = (widget.height * 0.42).clamp(80.0, 150.0);
+    return _card(
+      color: widget.color,
+      child: Center(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: UiShadows.card,
+          ),
+          child: Icon(widget.slide.icon,
+              size: size * 0.5, color: UiColors.sand),
+        ),
+      ),
     );
   }
 
   Widget _loadingBox() {
-    return Container(
-      width: widget.size,
-      height: widget.size,
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: BorderRadius.circular(24),
-      ),
+    return _card(
       child: const Center(
         child: SizedBox(
           width: 28,
@@ -400,39 +470,49 @@ class _SlideMediaState extends State<_SlideMedia> {
 
     if (slide.mediaType == 'none' || _failed) return _iconBox();
 
-    Widget child;
     if (slide.mediaType == 'image') {
-      child = Image.network(
-        slide.mediaUrl,
-        width: widget.size,
-        height: widget.size,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, img, progress) =>
-            progress == null ? img : _loadingBox(),
-        errorBuilder: (_, __, ___) => _iconBox(),
-      );
-    } else if (_videoReady && _video != null) {
-      final v = _video!;
-      child = SizedBox(
-        width: widget.size,
-        height: widget.size,
-        child: FittedBox(
+      return _card(
+        child: Image.network(
+          slide.mediaUrl,
+          width: double.infinity,
+          height: widget.height,
           fit: BoxFit.cover,
-          clipBehavior: Clip.hardEdge,
-          child: SizedBox(
-            width: v.value.size.width,
-            height: v.value.size.height,
-            child: VideoPlayer(v),
+          loadingBuilder: (context, img, progress) => progress == null
+              ? img
+              : const Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
+                ),
+          errorBuilder: (_, __, ___) => Container(
+            color: widget.color,
+            child: Center(
+              child: Icon(slide.icon, size: 64, color: UiColors.sand),
+            ),
           ),
         ),
       );
-    } else {
-      return _loadingBox();
     }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: child,
-    );
+    if (_videoReady && _video != null) {
+      final v = _video!;
+      return _card(
+        child: SizedBox.expand(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            clipBehavior: Clip.hardEdge,
+            child: SizedBox(
+              width: v.value.size.width,
+              height: v.value.size.height,
+              child: VideoPlayer(v),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return _loadingBox();
   }
 }

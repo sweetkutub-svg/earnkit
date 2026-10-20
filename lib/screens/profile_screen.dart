@@ -13,8 +13,6 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   static const _supportEmail = 'codewithkutub@gmail.com';
-  static const _green = Color(0xFF2E9E6B);
-  static const _amber = Color(0xFFD99A00);
 
   Future<void> _contactSupport(BuildContext context) async {
     final uri = Uri(
@@ -128,6 +126,13 @@ class ProfileScreen extends StatelessWidget {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
+  Widget _iconBubble(IconData icon, Color color) => Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: Icon(icon, size: 20, color: UiColors.ink),
+      );
+
   Widget _group(String title, List<Widget> tiles) {
     final children = <Widget>[];
     for (var i = 0; i < tiles.length; i++) {
@@ -150,11 +155,11 @@ class ProfileScreen extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(26),
             boxShadow: UiShadows.card,
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(26),
             child: Material(
               color: Colors.white,
               child: Column(children: children),
@@ -164,13 +169,6 @@ class ProfileScreen extends StatelessWidget {
       ],
     );
   }
-
-  Widget _iconBubble(IconData icon, Color color) => Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        child: Icon(icon, size: 20, color: UiColors.ink),
-      );
 
   Widget _tile(IconData icon, Color color, String title, VoidCallback onTap) {
     return ListTile(
@@ -273,84 +271,135 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// Big slate hero card: avatar on the left, name/email/status on the right.
   Widget _headerCard(AppUser? appUser, AuthService authService) {
     final name = (appUser?.name ?? '').trim();
     final verified = authService.isEmailVerified;
-    final chipColor = verified ? _green : _amber;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        color: UiColors.sand,
+        borderRadius: BorderRadius.circular(32),
         boxShadow: UiShadows.card,
       ),
-      child: Column(
+      child: Row(
         children: [
           Container(
-            width: 84,
-            height: 84,
-            decoration: BoxDecoration(
-              color: UiColors.sand,
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(
+              color: UiColors.mint,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: UiColors.sand.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
             ),
             alignment: Alignment.center,
             child: Text(
               _initials(name),
               style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 30,
+                  color: UiColors.ink,
+                  fontSize: 26,
                   fontWeight: FontWeight.w800),
             ),
           ),
-          const SizedBox(height: 14),
-          Text(name.isEmpty ? 'Earnkit User' : name,
-              style: const TextStyle(
-                  fontSize: 20,
-                  color: UiColors.ink,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 2),
-          Text(appUser?.email ?? '',
-              style: const TextStyle(
-                  fontSize: 13,
-                  color: UiColors.muted,
-                  fontWeight: FontWeight.w500)),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: chipColor.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  verified ? Icons.verified : Icons.error_outline,
-                  size: 15,
-                  color: chipColor,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  verified ? 'Email Verified' : 'Email Not Verified',
-                  style: TextStyle(
-                    color: chipColor,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
+                Text(name.isEmpty ? 'Earnkit User' : name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 20,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(appUser?.email ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        color: UiColors.onSandSoft,
+                        fontWeight: FontWeight.w500)),
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: verified ? UiColors.mint : UiColors.peach,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        verified ? Icons.verified : Icons.error_outline,
+                        size: 14,
+                        color: UiColors.ink,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        verified ? 'Email Verified' : 'Email Not Verified',
+                        style: const TextStyle(
+                          color: UiColors.ink,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Big pastel shortcut tile (two sit side by side).
+  Widget _quickTile(
+      IconData icon, Color color, String title, String sub, VoidCallback onTap) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: UiShadows.card,
+      ),
+      child: Material(
+        color: color,
+        borderRadius: BorderRadius.circular(28),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                      color: Colors.white, shape: BoxShape.circle),
+                  child: Icon(icon, size: 22, color: UiColors.ink),
+                ),
+                const SizedBox(height: 18),
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 16,
+                        color: UiColors.ink,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(sub,
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: UiColors.ink.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -382,14 +431,32 @@ class ProfileScreen extends StatelessWidget {
                               fontWeight: FontWeight.w800)),
                       const SizedBox(height: 16),
                       _headerCard(appUser, authService),
+                      const SizedBox(height: 16),
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _quickTile(
+                                  Icons.people_outline,
+                                  UiColors.mint,
+                                  'Refer & Earn',
+                                  'Invite friends',
+                                  () => context.push('/referral')),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: _quickTile(
+                                  Icons.history,
+                                  UiColors.lilac,
+                                  'History',
+                                  'Withdrawals',
+                                  () => context.push('/wallet')),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 22),
-                      _group('Account', [
-                        _tile(Icons.history, UiColors.lilac,
-                            'Withdrawal History', () => context.push('/wallet')),
-                        _tile(Icons.people_outline, UiColors.mint,
-                            'Refer & Earn', () => context.push('/referral')),
-                      ]),
-                      const SizedBox(height: 20),
                       _group('Preferences', [
                         _notificationTile(uid),
                       ]),

@@ -9,6 +9,7 @@ import '../services/firestore_service.dart';
 import '../services/cloudinary_service.dart';
 import '../services/ad_service.dart';
 import '../theme/ui_colors.dart';
+import '../widgets/skeleton.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final AppTask task;
@@ -122,7 +123,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: UiShadows.card,
         ),
         child: child,
@@ -142,12 +143,40 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
       );
 
-  Widget _applyButton(String label) => SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: _busy ? null : _apply,
-          child: _busy ? _spinner() : Text(label),
+  Widget _pill(String label, VoidCallback? onTap, {bool loading = false}) {
+    final enabled = onTap != null;
+    return Material(
+      color: enabled ? UiColors.sand : UiColors.disabled,
+      borderRadius: BorderRadius.circular(40),
+      elevation: enabled ? 5 : 0,
+      shadowColor: Colors.black.withValues(alpha: 0.3),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(40),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Center(
+            child: loading
+                ? _spinner()
+                : Text(label,
+                    style: const TextStyle(
+                        fontSize: 15,
+                        color: UiColors.onSand,
+                        fontWeight: FontWeight.w800)),
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _applyButton(String label) =>
+      _pill(label, _busy ? null : _apply, loading: _busy);
+
+  Widget _iconBubble(IconData icon, Color color) => Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: Icon(icon, color: UiColors.ink, size: 20),
       );
 
   Widget _uploadSection() {
@@ -156,21 +185,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       children: [
         const Text('Upload proof screenshot',
             style: TextStyle(
-                fontSize: 17, color: UiColors.ink, fontWeight: FontWeight.w800)),
+                fontSize: 18, color: UiColors.ink, fontWeight: FontWeight.w800)),
         const SizedBox(height: 10),
         GestureDetector(
           onTap: _busy ? null : _pickImage,
           child: Container(
-            height: 170,
+            height: 180,
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(28),
               boxShadow: UiShadows.card,
             ),
             child: _picked != null
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(28),
                     child: Image.file(_picked!, fit: BoxFit.cover),
                   )
                 : Center(
@@ -178,12 +207,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 54,
-                          height: 54,
+                          width: 58,
+                          height: 58,
                           decoration: const BoxDecoration(
                               color: UiColors.lilac, shape: BoxShape.circle),
                           child: const Icon(Icons.upload_file,
-                              color: UiColors.ink, size: 26),
+                              color: UiColors.ink, size: 28),
                         ),
                         const SizedBox(height: 10),
                         const Text('Tap to select screenshot',
@@ -197,13 +226,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _busy ? null : _submit,
-            child: _busy ? _spinner() : const Text('Watch Ad & Submit'),
-          ),
-        ),
+        _pill('Watch Ad & Submit', _busy ? null : _submit, loading: _busy),
       ],
     );
   }
@@ -219,7 +242,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         children: [
           if (st == SubmissionStatus.expired) ...[
             _box(
-              color: Colors.white,
+              color: UiColors.peach,
               child: const Text(
                 'Your previous attempt expired. Apply again to get a new deadline.',
                 style: TextStyle(
@@ -297,14 +320,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           children: [
             Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                      color: UiColors.peach, shape: BoxShape.circle),
-                  child: const Icon(Icons.hourglass_empty,
-                      color: UiColors.ink, size: 20),
-                ),
+                _iconBubble(Icons.hourglass_empty, UiColors.peach),
                 const SizedBox(width: 12),
                 Expanded(child: _boxTitle('Submitted — verification pending')),
               ],
@@ -312,10 +328,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             if (sub.screenshotUrl.isNotEmpty) ...[
               const SizedBox(height: 14),
               ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
                 child: Image.network(
                   sub.screenshotUrl,
-                  height: 150,
+                  height: 160,
                   width: double.infinity,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const SizedBox.shrink(),
@@ -370,18 +386,98 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ],
         if (task.url.trim().isNotEmpty) ...[
           const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _openLink,
-              icon: const Icon(Icons.open_in_new, size: 18),
-              label: const Text('Open Task Link'),
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(40),
+            elevation: 3,
+            shadowColor: Colors.black.withValues(alpha: 0.2),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(40),
+              onTap: _openLink,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.open_in_new, size: 18, color: UiColors.sand),
+                    SizedBox(width: 8),
+                    Text('Open Task Link',
+                        style: TextStyle(
+                            fontSize: 15,
+                            color: UiColors.sand,
+                            fontWeight: FontWeight.w800)),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
-        const SizedBox(height: 20),
+        const SizedBox(height: 22),
         _uploadSection(),
       ],
+    );
+  }
+
+  Widget _header() {
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: UiShadows.card,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => Navigator.of(context).maybePop(),
+              child: const Icon(Icons.arrow_back_rounded,
+                  color: UiColors.ink, size: 22),
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        const Text('Task details',
+            style: TextStyle(
+                fontSize: 24,
+                color: UiColors.ink,
+                fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
+
+  Widget _miniStat(Color color, IconData icon, String label, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: UiColors.ink),
+            const SizedBox(height: 8),
+            Text(value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 15,
+                    color: UiColors.ink,
+                    fontWeight: FontWeight.w800)),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFF55555A),
+                    fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -392,143 +488,149 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     return Scaffold(
       backgroundColor: UiColors.bg,
-      appBar: AppBar(title: const Text('Task details')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 6, 18, 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (task.imageUrl.isNotEmpty)
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _header(),
+              const SizedBox(height: 16),
+              if (task.imageUrl.isNotEmpty) ...[
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: UiShadows.card,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Image.network(
+                      task.imageUrl,
+                      width: double.infinity,
+                      height: 200,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Title card
               Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
                   boxShadow: UiShadows.card,
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.network(
-                    task.imageUrl,
-                    width: double.infinity,
-                    height: 190,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-            if (task.imageUrl.isNotEmpty) const SizedBox(height: 16),
-
-            // Title card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: UiShadows.card,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (task.codeLabel.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        '${task.codeLabel}  •  ${task.limitLabel}',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (task.codeLabel.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          task.codeLabel,
+                          style: const TextStyle(
+                              fontSize: 12,
+                              color: UiColors.sand,
+                              fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    Text(task.title,
                         style: const TextStyle(
-                            fontSize: 12,
-                            color: UiColors.sand,
-                            fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(task.title,
-                            style: const TextStyle(
-                                fontSize: 20,
-                                height: 1.2,
-                                color: UiColors.ink,
-                                fontWeight: FontWeight.w800)),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: UiColors.lilac,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Text('+${task.rewardPoints}',
-                            style: const TextStyle(
-                                fontSize: 15,
-                                color: UiColors.ink,
-                                fontWeight: FontWeight.w800)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(task.description,
-                      style: const TextStyle(
-                          fontSize: 14,
-                          height: 1.4,
-                          color: Color(0xFF55555A),
-                          fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: UiColors.peach,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                            fontSize: 22,
+                            height: 1.2,
+                            color: UiColors.ink,
+                            fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 10),
+                    Text(task.description,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            height: 1.45,
+                            color: Color(0xFF55555A),
+                            fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 16),
+                    Row(
                       children: [
-                        const Icon(Icons.info_outline,
-                            color: UiColors.ink, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            task.note.isNotEmpty
-                                ? task.note
-                                : 'Complete the task and upload a screenshot as proof.',
-                            style: const TextStyle(
-                                fontSize: 12.5,
-                                color: UiColors.ink,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ),
+                        _miniStat(UiColors.lilac, Icons.stars_outlined, 'Reward',
+                            '+${task.rewardPoints}'),
+                        const SizedBox(width: 10),
+                        _miniStat(UiColors.mint, Icons.timer_outlined,
+                            'To finish', '${task.durationHours}h'),
+                        if (task.limitLabel.isNotEmpty) ...[
+                          const SizedBox(width: 10),
+                          _miniStat(UiColors.peach, Icons.repeat, 'Limit',
+                              task.limitLabel),
+                        ],
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: UiColors.bg,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outline,
+                              color: UiColors.sand, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              task.note.isNotEmpty
+                                  ? task.note
+                                  : 'Complete the task and upload a screenshot as proof.',
+                              style: const TextStyle(
+                                  fontSize: 12.5,
+                                  color: UiColors.ink,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 18),
+              const SizedBox(height: 18),
 
-            if (uid == null)
-              const Text('Not logged in')
-            else
-              StreamBuilder<TaskSubmission?>(
-                stream: _fs.streamSubmission(uid, task.id),
-                builder: (context, snap) {
-                  if (snap.hasError) {
-                    return Text('Error: ${snap.error}');
-                  }
-                  if (snap.connectionState == ConnectionState.waiting &&
-                      !snap.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final sub = snap.data;
-                  return StreamBuilder<Map<String, int>>(
-                    stream: _fs.streamCompletedCounts(uid),
-                    builder: (context, cSnap) =>
-                        _actionSection(sub, cSnap.data ?? <String, int>{}),
-                  );
-                },
-              ),
-          ],
+              if (uid == null)
+                const Text('Not logged in')
+              else
+                StreamBuilder<TaskSubmission?>(
+                  stream: _fs.streamSubmission(uid, task.id),
+                  builder: (context, snap) {
+                    if (snap.hasError) {
+                      return Text('Error: ${snap.error}');
+                    }
+                    if (snap.connectionState == ConnectionState.waiting &&
+                        !snap.hasData) {
+                      return const Shimmer(
+                        child: Column(
+                          children: [
+                            SkeletonBox(height: 72, radius: 24),
+                            SizedBox(height: 14),
+                            SkeletonBox(height: 52, radius: 40),
+                          ],
+                        ),
+                      );
+                    }
+                    final sub = snap.data;
+                    return StreamBuilder<Map<String, int>>(
+                      stream: _fs.streamCompletedCounts(uid),
+                      builder: (context, cSnap) =>
+                          _actionSection(sub, cSnap.data ?? <String, int>{}),
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
