@@ -159,3 +159,49 @@ class WalletSkeleton extends StatelessWidget {
     ]);
   }
 }
+
+/// Loading placeholder for the Home screen.
+class HomeSkeleton extends StatelessWidget {
+  const HomeSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const _SkeletonPage(children: [
+      Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: 110, height: 14, radius: 6),
+                SizedBox(height: 8),
+                SkeletonBox(width: 170, height: 28, radius: 10),
+              ],
+            ),
+          ),
+          SkeletonBox(width: 46, height: 46, radius: 23),
+        ],
+      ),
+      SizedBox(height: 18),
+      SkeletonBox(height: 128, radius: 28),
+      SizedBox(height: 14),
+      SkeletonBox(height: 186, radius: 28),
+      SizedBox(height: 14),
+      Row(
+        children: [
+          Expanded(child: SkeletonBox(height: 104, radius: 24)),
+          SizedBox(width: 10),
+          Expanded(child: SkeletonBox(height: 104, radius: 24)),
+          SizedBox(width: 10),
+          Expanded(child: SkeletonBox(height: 104, radius: 24)),
+        ],
+      ),
+      SizedBox(height: 22),
+      SkeletonBox(width: 180, height: 24, radius: 8),
+      SizedBox(height: 12),
+      SkeletonBox(height: 96, radius: 24),
+      SizedBox(height: 10),
+      SkeletonBox(height: 96, radius: 24),
+    ]);
+  }
+}

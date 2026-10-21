@@ -68,6 +68,138 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     );
   }
 
+  Widget _hero(String email) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 30, 24, 26),
+      decoration: BoxDecoration(
+        color: UiColors.sand,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: UiShadows.card,
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: const BoxDecoration(
+                color: UiColors.mint, shape: BoxShape.circle),
+            child: const Icon(Icons.mark_email_unread_outlined,
+                size: 46, color: UiColors.ink),
+          ),
+          const SizedBox(height: 20),
+          const Text('Check your inbox',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 26,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          const Text('We sent a verification link to',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 14,
+                  color: UiColors.onSandSoft,
+                  fontWeight: FontWeight.w500)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Text(email,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 14,
+                    color: UiColors.ink,
+                    fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: UiShadows.card,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: const BoxDecoration(
+                color: UiColors.lilac, shape: BoxShape.circle),
+            child: _isChecking
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: UiColors.ink),
+                  )
+                : const Icon(Icons.autorenew,
+                    size: 20, color: UiColors.ink),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Waiting for verification...',
+                    style: TextStyle(
+                        fontSize: 14.5,
+                        color: UiColors.ink,
+                        fontWeight: FontWeight.w800)),
+                SizedBox(height: 2),
+                Text('Open the link in your email, then come back here.',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: UiColors.muted,
+                        fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _primaryButton(String label, VoidCallback? onTap, bool loading) {
+    return Material(
+      color: onTap == null ? UiColors.disabled : UiColors.sand,
+      borderRadius: BorderRadius.circular(40),
+      elevation: onTap == null ? 0 : 5,
+      shadowColor: Colors.black.withValues(alpha: 0.3),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(40),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 17),
+          child: Center(
+            child: loading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : Text(label,
+                    style: const TextStyle(
+                        fontSize: 15.5,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800)),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final email = _authService.currentUser?.email ?? '';
@@ -75,124 +207,36 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     return Scaffold(
       backgroundColor: UiColors.bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: UiColors.sand,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: UiColors.sand.withValues(alpha: 0.45),
-                      blurRadius: 24,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.mark_email_unread_outlined,
-                  size: 56,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                'Check your inbox',
-                style: TextStyle(
-                    fontSize: 28,
-                    color: UiColors.ink,
-                    fontWeight: FontWeight.w800),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'We sent a verification link to',
-                style: TextStyle(
-                    fontSize: 14,
-                    color: UiColors.muted,
-                    fontWeight: FontWeight.w500),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                email,
-                style: const TextStyle(
-                    fontSize: 15,
-                    color: UiColors.sand,
-                    fontWeight: FontWeight.w800),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 18),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: UiColors.mint,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: UiShadows.card,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_isChecking)
-                      const SizedBox(
-                        height: 14,
-                        width: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: UiColors.ink,
-                        ),
-                      )
-                    else
-                      const Icon(Icons.autorenew,
-                          size: 14, color: UiColors.ink),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Waiting for verification...',
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _hero(email),
+                const SizedBox(height: 16),
+                _statusCard(),
+                const SizedBox(height: 22),
+                _primaryButton('Resend Email',
+                    _isResending ? null : _resendEmail, _isResending),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: _isChecking ? null : _checkVerified,
+                  child: const Text("I've verified — Check Now",
                       style: TextStyle(
-                          fontSize: 12.5,
-                          color: UiColors.ink,
-                          fontWeight: FontWeight.w700),
-                    ),
-                  ],
+                          color: UiColors.sand, fontWeight: FontWeight.w800)),
                 ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isResending ? null : _resendEmail,
-                  child: _isResending
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Resend Email'),
+                TextButton(
+                  onPressed: () async {
+                    await _authService.signOut();
+                    if (context.mounted) context.go('/login');
+                  },
+                  child: const Text('Back to Login',
+                      style: TextStyle(
+                          color: UiColors.muted, fontWeight: FontWeight.w700)),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: _isChecking ? null : _checkVerified,
-                child: const Text("I've verified — Check Now"),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await _authService.signOut();
-                  if (context.mounted) context.go('/login');
-                },
-                child: const Text(
-                  'Back to Login',
-                  style: TextStyle(color: UiColors.muted),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

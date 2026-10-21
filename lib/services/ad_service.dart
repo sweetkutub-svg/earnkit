@@ -4,6 +4,13 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:http/http.dart' as http;
 import '../services/auth_service.dart';
 
+class _Slot {
+  final String liveId;
+  RewardedAd? ad;
+  bool loading = false;
+  _Slot(this.liveId);
+}
+
 class AdService {
   static final AdService _instance = AdService._internal();
   factory AdService() => _instance;
@@ -13,14 +20,13 @@ class AdService {
   static const String _testRewardedAdUnitId =
       'ca-app-pub-3940256099942544/5224354917';
 
-  // Put your real rewarded ad unit ID here right before release.
-  static const String _liveRewardedAdUnitId = 'REPLACE_WITH_REAL_AD_UNIT_ID';
+  // Debug builds use test ads, release builds use the real ad units.
+  static const bool _useTestAds = !bool.fromEnvironment('dart.vm.product');
 
-  // Keep true until the app is live.
-  static const bool _useTestAds = true;
+  final _Slot _rewardSlot = _Slot('ca-app-pub-3489289706205442/4083089856');
+  final _Slot _gateSlot = _Slot('ca-app-pub-3489289706205442/1726188121');
 
-  static String get _adUnitId =>
-      _useTestAds ? _testRewardedAdUnitId : _liveRewardedAdUnitId;
+  String _idFor(_Slot s) => _useTestAds ? _testRewardedAdUnitId : s.liveId;
 
   static const String _verifyAdEndpoint =
       'https://earnkit-backend.vercel.app/api/verify-ad';
@@ -30,36 +36,32 @@ class AdService {
 
   final _authService = AuthService();
 
-  RewardedAd? _rewardedAd;
-  bool _loading = false;
+  bool get isAdReady => _rewardSlot.ad != null;
 
-  bool get isAdReady => _rewardedAd != null;
-
-  Future<bool> _load() {
-    if (_rewardedAd != null) return Future.value(true);
-    if (_loading) {
-      // Wait for the load that is already running.
+  Future<bool> _load(_Slot slot) {
+    if (slot.ad != null) return Future.value(true);
+    if (slot.loading) {
       return Future.doWhile(() async {
         await Future.delayed(const Duration(milliseconds: 200));
-        return _loading;
-      }).then((_) => _rewardedAd != null);
+        return slot.loading;
+      }).then((_) => slot.ad != null);
     }
 
-    _loading = true;
+    slot.loading = true;
     final completer = Completer<bool>();
 
     RewardedAd.load(
-      adUnitId: _adUnitId,
+      adUnitId: _idFor(slot),
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          _rewardedAd = ad;
-          _loading = false;
+          slot.ad = ad;
+          slot.loading = false;
           if (!completer.isCompleted) completer.complete(true);
         },
         onAdFailedToLoad: (error) {
-          _rewardedAd = null;
-          _loading = false;
+          slot.ad = null;
+          slot.loading = false;
           // ignore: avoid_print
           print('ADMOB load failed: ${error.code} | ${error.message}');
           if (!completer.isCompleted) completer.complete(false);
@@ -70,17 +72,22 @@ class AdService {
     return completer.future.timeout(
       const Duration(seconds: 20),
       onTimeout: () {
-        _loading = false;
+        slot.loading = false;
         return false;
       },
     );
+  }
+
+  /// Warm up the gate ad so withdraw / task submit feel instant.
+  void preloadGateAd() {
+    unawaited(_load(_gateSlot));
   }
 
   void loadRewardedAd({
     required Function() onLoaded,
     required Function(String) onFailed,
   }) {
-    _load().then((ok) {
+    _load(_rewardSlot).then((ok) {
       if (ok) {
         onLoaded();
       } else {
@@ -96,13 +103,13 @@ class AdService {
     required Function(String error) onCreditFailed,
     required Function() onAdClosed,
   }) {
-    final ad = _rewardedAd;
+    final ad = _rewardSlot.ad;
     if (ad == null) {
       onCreditFailed('Ad is not ready yet. Please try again in a moment.');
       onAdClosed();
       return;
     }
-    _rewardedAd = null;
+    _rewardSlot.ad = null;
 
     bool earned = false;
 
@@ -133,10 +140,10 @@ class AdService {
 
   /// Gate ad (no points) before task submit / withdrawal. Returns true if the user may proceed.
   Future<bool> watchGateAd() async {
-    final loaded = await _load();
-    final ad = _rewardedAd;
+    final loaded = await _load(_gateSlot);
+    final ad = _gateSlot.ad;
     if (!loaded || ad == null) return !blockGateWhenAdUnavailable;
-    _rewardedAd = null;
+    _gateSlot.ad = null;
 
     final result = Completer<bool>();
     bool earned = false;
@@ -159,7 +166,7 @@ class AdService {
     });
 
     final allowed = await result.future;
-    unawaited(_load());
+    unawaited(_load(_gateSlot));
     return allowed;
   }
 

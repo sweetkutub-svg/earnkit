@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/ui_colors.dart';
+import '../services/interstitial_service.dart';
 
 class _NavItem {
   final IconData icon;
@@ -53,6 +54,7 @@ class AppBottomNav extends StatelessWidget {
                 onTap: () {
                   if (selected) return;
                   context.go(item.path);
+                  InterstitialService().maybeShowOnSwitch();
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),

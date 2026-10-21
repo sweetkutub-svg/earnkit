@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "347498236078-jr1b3elog8vc72ieeesdcvnken8678jq.apps.googleusercontent.com",
+          "client_id": "347498236078-cj36nkkig5ram8gev51e72uch0pla1ca.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.codewithkutub.earnkit",
-            "certificate_hash": "e72c9e09eee99b03bef032407b6712fb04d7bc07"
+            "certificate_hash": "5123288e4eb3963e3065970c1ed13634e6f04564"
           }
         },
         {

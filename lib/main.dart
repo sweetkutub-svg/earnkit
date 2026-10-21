@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
+import 'services/interstitial_service.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -13,7 +14,7 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   runApp(const EarnkitApp());
   // Initialize the Mobile Ads SDK in the background so app startup isn't blocked.
-  MobileAds.instance.initialize();
+  MobileAds.instance.initialize().then((_) => InterstitialService().preload());
 }
 
 class EarnkitApp extends StatelessWidget {

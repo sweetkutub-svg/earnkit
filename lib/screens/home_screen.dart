@@ -7,6 +7,7 @@ import '../services/firestore_service.dart';
 import '../services/ad_service.dart';
 import '../services/device_service.dart';
 import '../services/fraud_report_service.dart';
+import '../services/location_report_service.dart';
 import '../services/notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/user_model.dart';
@@ -16,6 +17,7 @@ import '../widgets/app_dialog.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/bonus_unlocked_dialog.dart';
 import '../theme/ui_colors.dart';
+import '../widgets/skeleton.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -41,6 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    LocationReportService.reportOncePerDay();
+    AdService().preloadGateAd();
     _checkDeviceAndLoadAd();
   }
 
@@ -528,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 stream: _userStream ??= _firestoreService.streamUserData(uid),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const HomeSkeleton();
                   }
 
                   final user = snapshot.data;
@@ -612,7 +616,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               return const Padding(
                                 padding: EdgeInsets.all(20),
                                 child: Center(
-                                    child: CircularProgressIndicator()),
+                                    child: Shimmer(child: SkeletonBox(height: 96, radius: 24))),
                               );
                             }
 

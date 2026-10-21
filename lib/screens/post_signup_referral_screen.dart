@@ -65,86 +65,150 @@ class _PostSignupReferralScreenState extends State<PostSignupReferralScreen> {
     }
   }
 
+  InputDecoration _dec() {
+    OutlineInputBorder b(Color c, double w) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: c, width: w),
+        );
+    return InputDecoration(
+      hintText: _locked ? 'Referral Code' : 'Referral Code (Optional)',
+      hintStyle: const TextStyle(
+          color: UiColors.muted, fontWeight: FontWeight.w500),
+      prefixIcon:
+          const Icon(Icons.card_giftcard_outlined, color: UiColors.muted),
+      suffixIcon: _locked
+          ? const Icon(Icons.lock_outline, color: UiColors.sand)
+          : null,
+      helperText: _locked ? 'Locked, applied from invite link' : null,
+      filled: true,
+      fillColor: UiColors.bg,
+      contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      border: b(Colors.transparent, 0),
+      enabledBorder: b(Colors.transparent, 0),
+      focusedBorder: b(UiColors.sand, 1.5),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: UiColors.bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 104,
-                height: 104,
-                decoration: BoxDecoration(
-                  color: UiColors.sand,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: UiColors.sand.withValues(alpha: 0.45),
-                      blurRadius: 22,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Hero
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 30, 24, 26),
+                  decoration: BoxDecoration(
+                    color: UiColors.sand,
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: UiShadows.card,
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 92,
+                        height: 92,
+                        decoration: const BoxDecoration(
+                            color: UiColors.lilac, shape: BoxShape.circle),
+                        child: const Icon(Icons.card_giftcard,
+                            size: 44, color: UiColors.ink),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        _locked ? 'Invite Code Applied' : 'Got a Referral Code?',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 25,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _locked
+                            ? "You joined through a friend's invite link.\nTap Next to continue."
+                            : 'If a friend invited you, enter their code below.\nOtherwise, just tap Next.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 13.5,
+                            height: 1.4,
+                            color: UiColors.onSandSoft,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
                 ),
-                child: const Icon(Icons.card_giftcard,
-                    size: 48, color: Colors.white),
-              ),
-              const SizedBox(height: 28),
-              Text(
-                _locked ? 'Invite Code Applied' : 'Got a Referral Code?',
-                style: const TextStyle(
-                    fontSize: 24,
-                    color: UiColors.ink,
-                    fontWeight: FontWeight.w800),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _locked
-                    ? "You joined through a friend's invite link.\nTap Next to continue."
-                    : 'If a friend invited you, enter their code below.\nOtherwise, just tap Next.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.4,
-                    color: UiColors.muted,
-                    fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 28),
-              TextField(
-                controller: _codeController,
-                readOnly: _locked,
-                textCapitalization: TextCapitalization.characters,
-                decoration: InputDecoration(
-                  labelText:
-                      _locked ? 'Referral Code' : 'Referral Code (Optional)',
-                  prefixIcon: const Icon(Icons.card_giftcard_outlined),
-                  suffixIcon: _locked
-                      ? const Icon(Icons.lock, color: UiColors.sand)
-                      : null,
-                  helperText:
-                      _locked ? 'Locked, applied from invite link' : null,
+                const SizedBox(height: 16),
+
+                // Form
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: UiShadows.card,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _codeController,
+                        readOnly: _locked,
+                        textCapitalization: TextCapitalization.characters,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            letterSpacing: 2,
+                            color: UiColors.ink,
+                            fontWeight: FontWeight.w800),
+                        decoration: _dec(),
+                      ),
+                      const SizedBox(height: 16),
+                      Material(
+                        color:
+                            _isLoading ? UiColors.disabled : UiColors.sand,
+                        borderRadius: BorderRadius.circular(40),
+                        elevation: _isLoading ? 0 : 5,
+                        shadowColor: Colors.black.withValues(alpha: 0.3),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(40),
+                          onTap: _isLoading ? null : _handleNext,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 17),
+                            child: Center(
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white),
+                                    )
+                                  : const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text('Next',
+                                            style: TextStyle(
+                                                fontSize: 15.5,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w800)),
+                                        SizedBox(width: 8),
+                                        Icon(Icons.arrow_forward_rounded,
+                                            size: 20, color: Colors.white),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleNext,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Next'),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

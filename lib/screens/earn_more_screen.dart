@@ -653,7 +653,7 @@ class _EarnMoreScreenState extends State<EarnMoreScreen> {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
-                  itemCount: shown.length + 1,
+                  itemCount: shown.length,
                   itemBuilder: (context, i) {
                     final task = shown[i];
                     return _taskCard(task, byTask[task.id], counts);
@@ -694,7 +694,7 @@ class _EarnMoreScreenState extends State<EarnMoreScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
-      itemCount: subs.length,
+      itemCount: subs.length + 1,
       itemBuilder: (context, i) {
         if (i == subs.length) return const SizedBox(height: 170); final s = subs[i];
         return Container(
