@@ -698,22 +698,28 @@ class _WatchAdCardState extends State<_WatchAdCard>
 
     _anim = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2600),
+      duration: const Duration(milliseconds: 3200),
     )..repeat();
 
-    // Hop up quickly, then fall back with a bounce, then rest.
+    // Ping-pong style: big hop, smaller hop, tiny hop, then a pause.
+    TweenSequenceItem<double> hop(double h, double w) => TweenSequenceItem(
+          tween: Tween<double>(begin: 0.0, end: -h)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: w,
+        );
+    TweenSequenceItem<double> drop(double h, double w) => TweenSequenceItem(
+          tween: Tween<double>(begin: -h, end: 0.0)
+              .chain(CurveTween(curve: Curves.easeIn)),
+          weight: w,
+        );
     _bounce = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: -10.0)
-            .chain(CurveTween(curve: Curves.easeOut)),
-        weight: 12,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: -10.0, end: 0.0)
-            .chain(CurveTween(curve: Curves.bounceOut)),
-        weight: 30,
-      ),
-      TweenSequenceItem(tween: ConstantTween<double>(0.0), weight: 58),
+      hop(14, 10),
+      drop(14, 10),
+      hop(7, 7),
+      drop(7, 7),
+      hop(3, 5),
+      drop(3, 5),
+      TweenSequenceItem(tween: ConstantTween<double>(0.0), weight: 56),
     ]).animate(_anim);
 
     // A light streak that sweeps across the button after the bounce.
