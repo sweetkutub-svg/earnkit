@@ -670,9 +670,14 @@ class _WatchAdCard extends StatefulWidget {
   State<_WatchAdCard> createState() => _WatchAdCardState();
 }
 
-class _WatchAdCardState extends State<_WatchAdCard> {
+class _WatchAdCardState extends State<_WatchAdCard>
+    with SingleTickerProviderStateMixin {
   Timer? _timer;
   int _shown = 0;
+
+  late final AnimationController _anim;
+  late final Animation<double> _bounce;
+  late final Animation<double> _shine;
 
   int _left() {
     final last = widget.lastAdTime;
@@ -690,12 +695,81 @@ class _WatchAdCardState extends State<_WatchAdCard> {
       final l = _left();
       if (l != _shown && mounted) setState(() => _shown = l);
     });
+
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    )..repeat();
+
+    // Hop up quickly, then fall back with a bounce, then rest.
+    _bounce = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: -10.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 12,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: -10.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.bounceOut)),
+        weight: 30,
+      ),
+      TweenSequenceItem(tween: ConstantTween<double>(0.0), weight: 58),
+    ]).animate(_anim);
+
+    // A light streak that sweeps across the button after the bounce.
+    _shine = CurvedAnimation(
+      parent: _anim,
+      curve: const Interval(0.35, 0.8, curve: Curves.easeInOut),
+    );
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _anim.dispose();
     super.dispose();
+  }
+
+  Widget _shineOverlay() {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(40),
+          child: LayoutBuilder(
+            builder: (context, cs) {
+              final w = cs.maxWidth;
+              return AnimatedBuilder(
+                animation: _shine,
+                builder: (context, _) {
+                  final x = -w * 0.35 + (w * 1.35) * _shine.value;
+                  return Transform.translate(
+                    offset: Offset(x, 0),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Transform(
+                        transform: Matrix4.skewX(-0.35),
+                        child: Container(
+                          width: w * 0.28,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withValues(alpha: 0),
+                                Colors.white.withValues(alpha: 0.45),
+                                Colors.white.withValues(alpha: 0),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -814,41 +888,55 @@ class _WatchAdCardState extends State<_WatchAdCard> {
             ],
           ),
           const SizedBox(height: 16),
-          Material(
-            color: enabled ? UiColors.sand : UiColors.disabled,
-            borderRadius: BorderRadius.circular(40),
-            elevation: enabled ? 5 : 0,
-            shadowColor: Colors.black.withValues(alpha: 0.3),
-            child: InkWell(
+          AnimatedBuilder(
+            animation: _anim,
+            builder: (context, child) => Transform.translate(
+              offset: Offset(0, enabled ? _bounce.value : 0),
+              child: child,
+            ),
+            child: Material(
+              color: enabled ? UiColors.sand : UiColors.disabled,
               borderRadius: BorderRadius.circular(40),
-              onTap: action,
-              child: Padding(
-                padding: const EdgeInsets.all(7),
-                child: Row(
+              elevation: enabled ? 5 : 0,
+              shadowColor: Colors.black.withValues(alpha: 0.3),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(40),
+                onTap: action,
+                child: Stack(
                   children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: enabled ? UiColors.mint : Colors.white54,
-                        shape: BoxShape.circle,
+                    Padding(
+                      padding: const EdgeInsets.all(7),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: enabled ? UiColors.mint : Colors.white54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(icon, color: UiColors.ink, size: 26),
+                          ),
+                          Expanded(
+                            child: Center(
+                              child: Text(label,
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      color: enabled
+                                          ? UiColors.onSand
+                                          : const Color(0xFF6A6A6F),
+                                      fontWeight: FontWeight.w800)),
+                            ),
+                          ),
+                          Icon(Icons.keyboard_double_arrow_right_rounded,
+                              color: enabled
+                                  ? UiColors.onSandSoft
+                                  : Colors.black26),
+                          const SizedBox(width: 12),
+                        ],
                       ),
-                      child: Icon(icon, color: UiColors.ink, size: 26),
                     ),
-                    Expanded(
-                      child: Center(
-                        child: Text(label,
-                            style: TextStyle(
-                                fontSize: 15,
-                                color: enabled
-                                    ? UiColors.onSand
-                                    : const Color(0xFF6A6A6F),
-                                fontWeight: FontWeight.w800)),
-                      ),
-                    ),
-                    Icon(Icons.keyboard_double_arrow_right_rounded,
-                        color: enabled ? UiColors.onSandSoft : Colors.black26),
-                    const SizedBox(width: 12),
+                    if (enabled) _shineOverlay(),
                   ],
                 ),
               ),
